@@ -1,11 +1,8 @@
 # coding: utf8
 
-# Other modules
 import numpy as np
-# Pinocchio modules
-import pinocchio as pin  # Pinocchio library
-
-from .PD import PD
+import pinocchio as pin
+from solo_pybullet.PD import PD
 
 ################
 #  CONTROLLER ##

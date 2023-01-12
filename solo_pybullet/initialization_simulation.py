@@ -1,73 +1,61 @@
-# coding: utf8
-
-import numpy as np  # Numpy library
+import numpy as np
 import pybullet_data
-from example_robot_data import loadSolo  # Functions to load the SOLO quadruped
+import pinocchio as pin
+from pinocchio.robot_wrapper import RobotWrapper
+import pybullet as p
 
-import pybullet as p  # PyBullet simulator
 
+def configure_simulation(dt):
+    # load solo12 model for pinocchio
+    urdf_filename = '/opt/openrobots/share/example-robot-data/robots/solo_description/robots/solo12.urdf'
+    meshes_dir = '/opt/openrobots/share'
+    robot_wrapper = RobotWrapper.BuildFromURDF(urdf_filename, meshes_dir, pin.JointModelFreeFlyer())
 
-def configure_simulation(dt, enableGUI):
-    global jointTorques
-    # Load the robot for Pinocchio
-    solo = loadSolo(True)
-    solo.initDisplay(loadModel=True)
+    # start pybullet client
+    client = p.connect(p.GUI)
 
-    # Start the client for PyBullet
-    if enableGUI:
-        physicsClient = p.connect(p.GUI)
-    else:
-        physicsClient = p.connect(p.DIRECT)  # noqa
-    # p.GUI for graphical version
-    # p.DIRECT for non-graphical version
-
-    # Set gravity (disabled by default)
+    # setup pybullet environment
     p.setGravity(0, 0, -9.81)
-
-    # Load horizontal plane for PyBullet
+    p.setTimeStep(dt)
     p.setAdditionalSearchPath(pybullet_data.getDataPath())
     p.loadURDF("plane.urdf")
 
-    # Load the robot for PyBullet
-    robotStartPos = [0, 0, 0.35]
-    robotStartOrientation = p.getQuaternionFromEuler([0, 0, 0])
-    p.setAdditionalSearchPath("/opt/openrobots/share/example-robot-data/solo_description/robots")
-    robotId = p.loadURDF("solo.urdf", robotStartPos, robotStartOrientation)
+    # load solo12 model for pybullet
+    robot_start_pos = [0, 0, 0.35]
+    robot_start_orientation = p.getQuaternionFromEuler([0, 0, 0])
+    p.setAdditionalSearchPath("/opt/openrobots/share/example-robot-data/robots/solo_description/robots")
+    robot_id = p.loadURDF("solo12.urdf", robot_start_pos, robot_start_orientation)
 
-    # Set time step of the simulation
-    # dt = 0.001
-    p.setTimeStep(dt)
-    # realTimeSimulation = True # If True then we will sleep in the main loop to have a frequency of 1/dt
+    # disable default motor control for revolute joints
+    rev_joint_idx = [0, 1, 2, 4, 5, 6, 8, 9, 10, 12, 13, 14]
+    p.setJointMotorControlArray(robot_id, jointIndices=rev_joint_idx, controlMode=p.VELOCITY_CONTROL,
+                                targetVelocities=[0.0 for m in rev_joint_idx],
+                                forces=[0.0 for m in rev_joint_idx])
 
-    # Disable default motor control for revolute joints
-    revoluteJointIndices = [0, 1, 3, 4, 6, 7, 9, 10]
-    p.setJointMotorControlArray(robotId,
-                                jointIndices=revoluteJointIndices,
-                                controlMode=p.VELOCITY_CONTROL,
-                                targetVelocities=[0.0 for m in revoluteJointIndices],
-                                forces=[0.0 for m in revoluteJointIndices])
+    # enable torque control for revolute joints
+    joint_torques = [0.0 for m in rev_joint_idx]
+    p.setJointMotorControlArray(robot_id, rev_joint_idx, controlMode=p.TORQUE_CONTROL, forces=joint_torques)
 
-    # Enable torque control for revolute joints
-    jointTorques = [0.0 for m in revoluteJointIndices]
-    p.setJointMotorControlArray(robotId, revoluteJointIndices, controlMode=p.TORQUE_CONTROL, forces=jointTorques)
-
-    # Compute one step of simulation for initialization
+    # compute one step of simulation for init
     p.stepSimulation()
 
-    return robotId, solo, revoluteJointIndices
+    return robot_id, robot_wrapper, rev_joint_idx
 
 
-# Function to get the position/velocity of the base and the angular position/velocity of all joints
-def getPosVelJoints(robotId, revoluteJointIndices):
+def get_pos_vel_joints(robot_id, rev_joint_idx):
+    # state of all joints
+    joint_states = p.getJointStates(robot_id, rev_joint_idx)
 
-    jointStates = p.getJointStates(robotId, revoluteJointIndices)  # State of all joints
-    baseState = p.getBasePositionAndOrientation(robotId)  # Position of the free flying base
-    baseVel = p.getBaseVelocity(robotId)  # Velocity of the free flying base
+    # position and orientation of the free flying base
+    base_state = p.getBasePositionAndOrientation(robot_id)
+
+    # velocity of the free flying base
+    base_vel = p.getBaseVelocity(robot_id)
 
     # Reshaping data into q and qdot
-    q = np.vstack((np.array([baseState[0]]).transpose(), np.array([baseState[1]]).transpose(),
-                   np.array([[jointStates[i_joint][0] for i_joint in range(len(jointStates))]]).transpose()))
-    qdot = np.vstack((np.array([baseVel[0]]).transpose(), np.array([baseVel[1]]).transpose(),
-                      np.array([[jointStates[i_joint][1] for i_joint in range(len(jointStates))]]).transpose()))
+    q = np.vstack((np.array([base_state[0]]).transpose(), np.array([base_state[1]]).transpose(),
+                   np.array([[joint_states[i_joint][0] for i_joint in range(len(joint_states))]]).transpose()))
+    qdot = np.vstack((np.array([base_vel[0]]).transpose(), np.array([base_vel[1]]).transpose(),
+                      np.array([[joint_states[i_joint][1] for i_joint in range(len(joint_states))]]).transpose()))
 
     return q, qdot
