@@ -5,7 +5,7 @@ import unittest
 import numpy as np
 from example_robot_data import loadSolo
 
-from solo_pybullet.controller import c_walking_IK
+from solo_pybullet.controller2 import c_walking_IK
 from solo_pybullet.PD import PD
 
 
