@@ -10,21 +10,46 @@ This repository offers an environment to simulate different controllers on the Q
 You can implement your controller on the *controller.py* file and call your control function in the main program *main.py* by replacing the `c(...)` function in the loop.
 
 ## Installation
+### Python Version
+{PYTHON_VERSION}
 
-To install [Pinocchio](https://github.com/stack-of-tasks/pinocchio/), the urdf and meshes of the **Solo** Quadruped,
-the [Gepetto Viewer](https://github.com/gepetto/gepetto-viewer-corba) and their python bindings:
+### Add robotpkg apt repository
+```bash
+sudo apt install -qqy lsb-release gnupg2 curl
+echo "deb [arch=amd64] http://robotpkg.openrobots.org/packages/debian/pub $(lsb_release -cs) robotpkg" | sudo tee /etc/apt/sources.list.d/robotpkg.list
+curl http://robotpkg.openrobots.org/packages/debian/robotpkg.key | sudo apt-key add -
+sudo apt-get update
+```
 
+### Install Pinocchio
+```bash
+ sudo apt install -qqy robotpkg-py{PYTHON_VERSION}-pinocchio
+```
+
+### Configure environment variables
+```bash
+export PATH=/opt/openrobots/bin:$PATH
+export PKG_CONFIG_PATH=/opt/openrobots/lib/pkgconfig:$PKG_CONFIG_PATH
+export LD_LIBRARY_PATH=/opt/openrobots/lib:$LD_LIBRARY_PATH
+export PYTHONPATH=/opt/openrobots/lib/python{PYTHON_VERSION}/site-packages:$PYTHONPATH # Adapt your desired python version here
+export CMAKE_PREFIX_PATH=/opt/openrobots:$CMAKE_PREFIX_PATH
+```
+
+### Install dependencies
 ```bash
 curl http://robotpkg.openrobots.org/packages/debian/robotpkg.key | sudo apt-key add -
 sudo tee /etc/apt/sources.list.d/robotpkg.list <<EOF
 deb [arch=amd64] http://robotpkg.openrobots.org/wip/packages/debian/pub $(lsb_release -cs) robotpkg
 deb [arch=amd64] http://robotpkg.openrobots.org/packages/debian/pub $(lsb_release -cs) robotpkg
 EOF
-sudo apt update -qqy && sudo apt install -qqy robotpkg-py3\*-{pinocchio,example-robot-data,qt4-gepetto-viewer-corba}
+sudo apt update -qqy
+sudo apt install -qqy robotpkg-py{PYTHON_VERSION}-{pinocchio,example-robot-data,qt5-gepetto-viewer-corba}
 ```
 
-To install PyBullet:
-`pip3 install --user pybullet`
+### Install PyBullet
+```bash
+pip3 install --user pybullet
+```
 
 ## How to start the simulation
 launch `gepetto-gui`, then `python3 -m solo_pybullet`
