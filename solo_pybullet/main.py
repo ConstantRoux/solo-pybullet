@@ -14,15 +14,16 @@ if __name__ == "__main__":
     duration = 3600  # define the duration of the simulation in seconds
     robot_id, robot_wrapper, rev_joint_idx = configure_simulation(dt)  # configure and load model in pybullet and pinocchio
 
+
     ###############
     #  MAIN LOOP ##
     ###############
     for i in range(int(duration / dt)):
         # compute desired configuration
-        q = kinematic_controller(robot_id, dt * i)
+        q, dq = kinematic_controller(robot_id, rev_joint_idx, dt * i)
 
-        # active actuator with new configuration
-        p.setJointMotorControlArray(robot_id, rev_joint_idx, controlMode=p.POSITION_CONTROL, targetPositions=q)
+        # active actuators with new configuration
+        p.setJointMotorControlArray(robot_id, rev_joint_idx, controlMode=p.POSITION_CONTROL, targetPositions=q, targetVelocities=dq)
 
         # next step simulation
         p.stepSimulation()
