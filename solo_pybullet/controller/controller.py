@@ -32,9 +32,9 @@ def c_walking_IK(q, qdot, dt, solo, t_simu):
     # Initialization of the variables
     K = 100.  # Convergence gain
     T = 1  # period of the foot trajectory
-    xF0 = 0.19  # initial position of the front feet
-    xH0 = -0.19  # initial position of the hind feet
-    z0 = -0.15  # initial altitude of each foot
+    xF0 = 0.207  # initial position of the front feet
+    xH0 = -0.207  # initial position of the hind feet
+    z0 = 0  # initial altitude of each foot
     dx = 0.03  # displacement amplitude by x
     dz = 0.06  # displacement amplitude by z
 
@@ -45,7 +45,7 @@ def c_walking_IK(q, qdot, dt, solo, t_simu):
     ID_HR = solo.model.getFrameId("HR_FOOT")
 
     # function defining the feet's trajectory
-    def ftraj(t, x0, y0, z0):  # arguments : time, initial position x and z
+    def _ftraj(t, x0, y0, z0):  # arguments : time, initial position x and z
         global T, dx, dz
         x = []
         y = []
@@ -64,6 +64,21 @@ def c_walking_IK(q, qdot, dt, solo, t_simu):
 
         return np.matrix([x, y, z])
 
+    def ftraj(t, x0, y0, z0):  # arguments : time, initial position x and z
+        global T, dx, dz
+        x = []
+        y = []
+        z = []
+
+        if t >= T:
+            t %= T
+
+        z.append(z0 + dz * np.sin(2 * np.pi * t / T) + dz)
+        y.append(y0)
+        x.append(x0)
+
+        return np.matrix([x, y, z])
+
     # Compute/update all the joints and frames
     pin.forwardKinematics(solo.model, solo.data, q_ref)
     pin.updateFramePlacements(solo.model, solo.data)
@@ -73,20 +88,30 @@ def c_walking_IK(q, qdot, dt, solo, t_simu):
     xyz_FR = solo.data.oMf[ID_FR].translation
     xyz_HL = solo.data.oMf[ID_HL].translation
     xyz_HR = solo.data.oMf[ID_HR].translation
+    print('xyz_FL ' + str(xyz_FL))
+    print('xyz_FR ' + str(xyz_FR))
+    print('xyz_HL ' + str(xyz_HL))
+    print('xyz_HR ' + str(xyz_HR))
 
     # Desired foot trajectory
     xyzdes_FL = ftraj(t_simu, xF0, 0.14695, z0)
-    print(xyzdes_FL[2])
     xyzdes_FR = ftraj(t_simu + T / 2, xF0, -0.14695, z0)
     xyzdes_HL = ftraj(t_simu + T / 2, xH0, 0.14695, z0)
     xyzdes_HR = ftraj(t_simu, xH0, -0.14695, z0)
-
+    # print('xyzdes_FL ' + str(xyzdes_FL))
+    # print('xyzdes_FR ' + str(xyzdes_FR))
+    # print('xyzdes_HL ' + str(xyzdes_HL))
+    # print('xyzdes_HR ' + str(xyzdes_HR))
 
     # Calculating the error
     err_FL = xyz_FL - np.asarray(xyzdes_FL).reshape(-1)
     err_FR = xyz_FR - np.asarray(xyzdes_FR).reshape(-1)
     err_HL = xyz_HL - np.asarray(xyzdes_HL).reshape(-1)
     err_HR = xyz_HR - np.asarray(xyzdes_HR).reshape(-1)
+    # print('err_FL ' + str(err_FL))
+    # print('err_FR ' + str(err_FR))
+    # print('err_HL ' + str(err_HL))
+    # print('err_HR ' + str(err_HR))
 
     # Computing the local Jacobian into the global frame
     oR_FL = solo.data.oMf[ID_FL].rotation
