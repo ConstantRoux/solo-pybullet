@@ -2,22 +2,11 @@
 #  LOADING MODULES ##
 #####################
 import numpy as np
-
-T = 0.5  # period of the foot trajectory
-
-xF0 = 0.207  # initial X position of the front feet
-xH0 = -0.207  # initial X position of the hind feet
-
-yF0 = 0.14695  # initial Y position of the front feet
-yH0 = -0.14695  # initial Y position of the hind feet
-
-z0 = -0.25  # negative distance between the base and the ground
-
-dx = 0.03  # displacement amplitude by x
-dz = 0.03  # displacement amplitude by z
+from solo_pybullet.controller.kinematic_controller.params import *
 
 
 def foot_trajectory(t, x0, y0, z0):  # arguments : time, initial position x, y and z
+    T, xF0, xH0, yF0, yH0, z0, dx, dz = update_params()
     x = []
     y = []
     z = []

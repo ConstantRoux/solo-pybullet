@@ -1,10 +1,9 @@
 #####################
 #  LOADING MODULES ##
 #####################
-import numpy as np
 import pybullet as p
 from solo_pybullet.initialization_simulation import configure_simulation
-from solo_pybullet.controller.kinematic_controller import kinematic_controller
+from solo_pybullet.controller.kinematic_controller.kinematic_controller import kinematic_controller
 
 if __name__ == "__main__":
     ####################

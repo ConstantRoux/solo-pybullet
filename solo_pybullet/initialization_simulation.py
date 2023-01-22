@@ -4,6 +4,8 @@ import pinocchio as pin
 from pinocchio.robot_wrapper import RobotWrapper
 import pybullet as p
 
+from solo_pybullet.controller.kinematic_controller.params import init_params
+
 
 def configure_simulation(dt):
     # load solo12 model for pinocchio
@@ -21,7 +23,7 @@ def configure_simulation(dt):
     p.loadURDF("plane.urdf")
 
     # load solo12 model for pybullet
-    robot_start_pos = [0, 0, 0.33]
+    robot_start_pos = [0, 0, 0.35] # 0 0 .325 c'est marrant
     robot_start_orientation = p.getQuaternionFromEuler([0, 0, 0])
     p.setAdditionalSearchPath("/opt/openrobots/share/example-robot-data/robots/solo_description/robots")
     robot_id = p.loadURDF("solo12.urdf", robot_start_pos, robot_start_orientation)
@@ -35,6 +37,9 @@ def configure_simulation(dt):
     # enable torque control for revolute joints
     joint_torques = [0.0 for m in rev_joint_idx]
     p.setJointMotorControlArray(robot_id, rev_joint_idx, controlMode=p.TORQUE_CONTROL, forces=joint_torques)
+
+    # init debugger params
+    init_params()
 
     # compute one step of simulation for init
     p.stepSimulation()

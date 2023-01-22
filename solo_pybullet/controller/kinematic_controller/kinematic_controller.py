@@ -4,7 +4,8 @@
 import pybullet as p
 import numpy as np
 from solo_pybullet.math.matrix_transformation import transformation_matrix
-from solo_pybullet.controller.foot_trajectory import foot_trajectory, d_foot_trajectory
+from solo_pybullet.controller.kinematic_controller.foot_trajectory import foot_trajectory, d_foot_trajectory
+from solo_pybullet.controller.kinematic_controller.params import *
 
 
 def get_transformation_matrix(robot_id):
@@ -33,13 +34,8 @@ def get_dq(J, vel):
 
 def kinematic_controller(robot_id, rev_joint_idx, t):
     # parameters
-    T = 0.5  # period of the foot trajectory
-    xF0 = 0.207  # initial X position of the front feet
-    xH0 = -0.207  # initial X position of the hind feet
-    yF0 = 0.14695  # initial Y position of the front feet
-    yH0 = -0.14695  # initial Y position of the hind feet
-    z0 = -0.25  # negative distance between the base and the ground
     end_effectors = [3, 7, 11, 15]  # TODO function : get foots id
+    T, xF0, xH0, yF0, yH0, z0, dx, dz = update_params()
 
     # get the transformation matrix to convert local coord to world coord
     loc2world = get_transformation_matrix(robot_id)
