@@ -1,7 +1,6 @@
 import numpy as np
 import pybullet_data
 import pinocchio as pin
-from pinocchio.robot_wrapper import RobotWrapper
 import pybullet as p
 
 from solo_pybullet.controller.kinematic_controller.params import init_params
@@ -11,7 +10,6 @@ def configure_simulation(dt):
     # load solo12 model for pinocchio
     urdf_filename = '/opt/openrobots/share/example-robot-data/robots/solo_description/robots/solo12.urdf'
     meshes_dir = '/opt/openrobots/share'
-    robot_wrapper = RobotWrapper.BuildFromURDF(urdf_filename, meshes_dir, pin.JointModelFreeFlyer())
 
     # start pybullet client
     client = p.connect(p.GUI)
@@ -44,7 +42,7 @@ def configure_simulation(dt):
     # compute one step of simulation for init
     p.stepSimulation()
 
-    return robot_id, robot_wrapper, rev_joint_idx
+    return robot_id, rev_joint_idx
 
 
 def get_pos_vel_joints(robot_id, rev_joint_idx):

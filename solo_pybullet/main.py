@@ -11,8 +11,10 @@ if __name__ == "__main__":
     ####################
     dt = 0.001  # define the time step in second
     duration = 3600  # define the duration of the simulation in seconds
-    robot_id, robot_wrapper, rev_joint_idx = configure_simulation(dt)  # configure and load model in pybullet and pinocchio
+    robot_id, rev_joint_idx = configure_simulation(dt)  # configure and load model in pybullet and pinocchio
 
+    for i in range(p.getNumJoints(robot_id)):
+        print(p.getJointInfo(robot_id, i))
 
     ###############
     #  MAIN LOOP ##

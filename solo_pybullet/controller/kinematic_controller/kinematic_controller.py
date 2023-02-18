@@ -3,7 +3,7 @@
 #####################
 import pybullet as p
 import numpy as np
-from solo_pybullet.math.matrix_transformation import transformation_matrix
+from solo_pybullet.math.matrix_math import transformation_matrix
 from solo_pybullet.controller.kinematic_controller.foot_trajectory import foot_trajectory, d_foot_trajectory
 from solo_pybullet.controller.kinematic_controller.params import *
 
