@@ -11,25 +11,25 @@ class Kinematics:
 
         # rotation to pass from FR to others
         self.labels = ['FL', 'FR', 'BR', 'BL']
-        self.r = {'FR': np.matrix([[1, 0, 0, L[1]],
-                                   [0, 1, 0, -L[0]],
-                                   [0, 0, 1, 0],
-                                   [0, 0, 0, 1]]),
-                  'FL': np.matrix([[-1, 0, 0, -L[1]],
-                                    [0, 1, 0, -L[0]],
+        self.r = {'FL': np.matrix([[-1, 0, 0, 0],
+                                    [0, 1, 0, 0],
                                     [0, 0, 1, 0],
                                     [0, 0, 0, 1]]),
-                  'BR': np.matrix([[1, 0, 0, L[1]],
-                                   [0, -1, 0, L[0]],
+                  'FR': np.matrix([[1, 0, 0, 0],
+                                   [0, 1, 0, 0],
                                    [0, 0, 1, 0],
                                    [0, 0, 0, 1]]),
-                  'BL': np.matrix([[-1, 0, 0, -L[1]],
-                                    [0, -1, 0, L[0]],
+                  'BR': np.matrix([[1, 0, 0, 0],
+                                   [0, -1, 0, 0],
+                                   [0, 0, 1, 0],
+                                   [0, 0, 0, 1]]),
+                  'BL': np.matrix([[-1, 0, 0, 0],
+                                    [0, -1, 0, 0],
                                     [0, 0, 1, 0],
                                     [0, 0, 0, 1]])}
 
-        self.L[0] = 0
-        self.L[1] = 0
+        # self.L[0] = 0
+        # self.L[1] = 0
 
     def forward_kinematics(self, Q):
         list = []
@@ -63,9 +63,6 @@ class Kinematics:
     def __inverse_kinematics(self, pos, R):
         L1, L2, L3, L4, L5, L6, L7 = self.L
 
-        # converts desired pos in R0' frame to R0
-        pos = np.asarray((np.linalg.inv(R) @ np.append(pos, 1))[0, 0:3]).reshape(-1)
-
         # compute q1
         X = pos[2]
         Y = -pos[0] - L2
@@ -89,9 +86,6 @@ class Kinematics:
                           (B1_1 * Z1 + B2_1 * Z2) / (B1_1 * B1_1 + B2_1 * B2_1))
         q2_2 = np.arctan2((B1_2 * Z2 - B2_2 * Z1) / (B1_2 * B1_2 + B2_2 * B2_2),
                           (B1_2 * Z1 + B2_2 * Z2) / (B1_2 * B1_2 + B2_2 * B2_2))
-
-        # return np.array([[q1, q2_1, q3_1],
-        #                  [q1, q2_2, q3_2]])
 
         return np.array([q1, q2_1, q3_1])
 
@@ -136,16 +130,15 @@ class Kinematics:
 def test_1():
     # imports
     from solo_pybullet.model.foot_trajectory.cycloid_foot_trajectory import foot_trajectory
-    import matplotlib.pyplot as plt
     from solo_pybullet.model.robot.Viewer import Viewer
 
     # variables
     L = [0.15, 0.1, 0.15, 0.03, 0.15, 0.03, 0.15]
     T = 1
-    Lp = 0.2
+    Lp = 0.15
     x0 = -(L[1] + L[3] + L[5])
     y0 = -(L[0] + L[2] - Lp / 2)
-    z0 = -0.8 * (L[4] + L[6])
+    z0 = -0.2
     H = 0.05
     kinematics = Kinematics(L)
 
@@ -155,9 +148,12 @@ def test_1():
     # test inverse kinematics
     # get space points and orientation of end effector
     t = np.linspace(0, T, 10)
-    res = np.empty((3, len(t)))
+    res = np.empty((12, len(t)))
     for i, t0 in enumerate(t):
-        res[:, i] = foot_trajectory(t0, T, x0, y0, z0, H, Lp)
+        res[0:3, i] = foot_trajectory(t0, T, x0, y0, z0, H, Lp)
+        res[3:6, i] = foot_trajectory(t0, T, x0, y0, z0, H, Lp)
+        res[6:9, i] = foot_trajectory(t0, T, x0, y0, z0, H, Lp)
+        res[9:12, i] = foot_trajectory(t0, T, x0, y0, z0, H, Lp)
 
     Viewer.viewInverseKinematics(kinematics, res)
 

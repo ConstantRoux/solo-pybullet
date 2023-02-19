@@ -1,5 +1,4 @@
 import numpy as np
-from solo_pybullet.math.matrix_math import Th, Rx, Ry, Rz
 
 
 def foot_trajectory(t, T, x0, y0, z0, H, L):

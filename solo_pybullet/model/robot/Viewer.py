@@ -43,8 +43,8 @@ class Viewer:
             ax.clear()
             draw()
 
-            t = kinematics.T0k(q, 4, kinematics.r[kinematics.labels[0]])[:-1, 3].reshape(-1)
-            print(kinematics.inverse_kinematics([np.asarray(t).reshape(-1)])[0:3])
+            t = kinematics.T0k(q, 4, kinematics.r[kinematics.labels[1]])[:-1, 3].reshape(-1)
+            kinematics.inverse_kinematics([np.asarray(t).reshape(-1)])[3:6]
 
         # sliders
         for i in range(3):
@@ -64,19 +64,18 @@ class Viewer:
     def viewInverseKinematics(kinematics, points):
         Q = np.empty((12, points.shape[1]))
         pos = np.zeros((5 * points.shape[1], 3, 4))
+
         for i in range(points.shape[1]):
-            Q[:, i] = kinematics.inverse_kinematics([points[:, i] for j in range(4)])
-            for j in range(5):
+            Q[:, i] = kinematics.inverse_kinematics([points[3 * j: 3 * (j + 1), i] for j in range(4)])
+            for j in range(1, 5):
                 for k in range(4):
-                    if j == 0:
-                        pos[j, :, k] = kinematics.r[kinematics.labels[k]][:-1, 3].T
-                    else:
-                        pos[j, :, k] = np.transpose(kinematics.T0k(Q[3 * k:3 * (k + 1), i], j, kinematics.r[kinematics.labels[k]])[:-1, 3])
+                    pos[5 * i + j, :, k] = np.transpose(kinematics.T0k(Q[3 * k:3 * (k + 1), i], j, kinematics.r[kinematics.labels[k]])[:-1, 3])
 
         fig = plt.figure()
         ax = plt.axes(projection='3d')
+        ax.set_title('Visualisation du MGI')
         ax.scatter3D(points[0, :], points[1, :], points[2, :])
         for k in range(4):
             for i in range(points.shape[1]):
-                ax.plot(pos[5 * i: 5 * (i + 1), 0, k], pos[5 * i: 5 * (i + 1), 1, k], pos[5 * i: 5 * (i + 1), 2, k])
+                ax.plot3D(pos[5 * i: 5 * (i + 1), 0, k], pos[5 * i: 5 * (i + 1), 1, k], pos[5 * i: 5 * (i + 1), 2, k])
         plt.show()
