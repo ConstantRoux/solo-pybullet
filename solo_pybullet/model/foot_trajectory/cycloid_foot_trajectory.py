@@ -1,9 +1,13 @@
 import numpy as np
 
 
-def foot_trajectory(t, T, x0, y0, z0, H, L):
+def foot_trajectory(t, T, x0, y0, z0, H, L, y=0):
     # modulo on a period
     t = t % T
+
+    # way
+    if y == 1:
+        t = T - t
 
     # swing (hors sol)
     if t < T / 2:
