@@ -6,7 +6,7 @@ import pybullet as p
 from solo_pybullet.controller.kinematic_controller.params import init_params
 
 
-def configure_simulation(dt):
+def configure_simulation(dt, fixedBase=False):
     # load solo12 model for pinocchio
     urdf_filename = '/opt/openrobots/share/example-robot-data/robots/solo_description/robots/solo12.urdf'
     meshes_dir = '/opt/openrobots/share'
@@ -21,10 +21,10 @@ def configure_simulation(dt):
     p.loadURDF("plane.urdf")
 
     # load solo12 model for pybullet
-    robot_start_pos = [0, 0, 0.35] # 0 0 .325 c'est marrant
+    robot_start_pos = [0, 0, 0.4] # 0 0 .325 c'est marrant
     robot_start_orientation = p.getQuaternionFromEuler([0, 0, 0])
     p.setAdditionalSearchPath("/opt/openrobots/share/example-robot-data/robots/solo_description/robots")
-    robot_id = p.loadURDF("solo12.urdf", robot_start_pos, robot_start_orientation)
+    robot_id = p.loadURDF("solo12.urdf", robot_start_pos, robot_start_orientation, useFixedBase=fixedBase)
 
     # disable default motor control for revolute joints
     rev_joint_idx = [0, 1, 2, 4, 5, 6, 8, 9, 10, 12, 13, 14]

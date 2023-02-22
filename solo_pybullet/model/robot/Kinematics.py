@@ -3,30 +3,29 @@ from numpy import cos as c
 from numpy import sin as s
 
 
-# TODO kinematics front left -> front right -> h left -> h right
 class Kinematics:
     def __init__(self, L):
         # offsets
         self.L = L
 
         # rotation to pass from FR to others
-        self.labels = ['FL', 'FR', 'BR', 'BL']
+        self.labels = ['FL', 'FR', 'HL', 'HR']
         self.r = {'FL': np.matrix([[-1, 0, 0, 0],
-                                    [0, 1, 0, 0],
-                                    [0, 0, 1, 0],
-                                    [0, 0, 0, 1]]),
+                                   [0, 1, 0, 0],
+                                   [0, 0, 1, 0],
+                                   [0, 0, 0, 1]]),
                   'FR': np.matrix([[1, 0, 0, 0],
                                    [0, 1, 0, 0],
                                    [0, 0, 1, 0],
                                    [0, 0, 0, 1]]),
-                  'BR': np.matrix([[1, 0, 0, 0],
+                  'HL': np.matrix([[1, 0, 0, 0],
                                    [0, -1, 0, 0],
                                    [0, 0, 1, 0],
                                    [0, 0, 0, 1]]),
-                  'BL': np.matrix([[-1, 0, 0, 0],
-                                    [0, -1, 0, 0],
-                                    [0, 0, 1, 0],
-                                    [0, 0, 0, 1]])}
+                  'HR': np.matrix([[-1, 0, 0, 0],
+                                   [0, -1, 0, 0],
+                                   [0, 0, 1, 0],
+                                   [0, 0, 0, 1]])}
 
     def forward_kinematics(self, Q, dQ):
         P = np.zeros(12, )
@@ -38,12 +37,12 @@ class Kinematics:
 
         return P, dP
 
-    def inverse_kinematics(self, P, dP):
+    def inverse_kinematics(self, P, dP, c):
         Q = np.zeros((12,))
         dQ = np.zeros((12,))
 
         for i in range(4):
-            Q[3 * i: 3 * (i + 1)] = self.__inverse_kinematics(P[3 * i: 3 * (i + 1)])
+            Q[3 * i: 3 * (i + 1)] = self.__inverse_kinematics(P[3 * i: 3 * (i + 1)], c[4 * i: 4 * (i + 1)])
             dQ[3 * i: 3 * (i + 1)] = np.linalg.pinv(self.__linearJacobian(Q[3 * i: 3 * (i + 1)])) @ dP[3 * i: 3 * (i + 1)]
         return Q, dQ
 
@@ -57,47 +56,47 @@ class Kinematics:
         q1, q2, q3 = Q
         L1, L2, L3, L4, L5, L6, L7 = self.L
         T04 = np.matrix([[c(q1) * c(q2) * c(q3) - c(q1) * s(q2) * s(q3),
-                           -c(q1) * c(q2) * s(q3) - c(q1) * c(q3) * s(q2), -s(q1),
-                           -L7 * (c(q1) * c(q2) * c(q3) - c(q1) * s(q2) * s(q3)) - L6 * s(q1) + c(q1) * c(
-                               q2) * L5 - (L3 + L4) * s(q1) - L2],
-                          [c(q3) * s(q2) + c(q2) * s(q3), -s(q2) * s(q3) + c(q2) * c(q3), 0,
-                           -L7 * (c(q3) * s(q2) + c(q2) * s(q3)) + s(q2) * L5 - L1],
-                          [s(q1) * c(q2) * c(q3) - s(q1) * s(q2) * s(q3),
-                           -s(q1) * c(q2) * s(q3) - s(q1) * c(q3) * s(q2), c(q1),
-                           -L7 * (s(q1) * c(q2) * c(q3) - s(q1) * s(q2) * s(q3)) + L6 * c(q1) + s(q1) * c(
-                               q2) * L5 + (L3 + L4) * c(q1)],
-                          [0, 0, 0, 1]])
+                          -c(q1) * c(q2) * s(q3) - c(q1) * c(q3) * s(q2), -s(q1),
+                          -L7 * (c(q1) * c(q2) * c(q3) - c(q1) * s(q2) * s(q3)) - L6 * s(q1) + c(q1) * c(
+                              q2) * L5 - (L3 + L4) * s(q1) - L2],
+                         [c(q3) * s(q2) + c(q2) * s(q3), -s(q2) * s(q3) + c(q2) * c(q3), 0,
+                          -L7 * (c(q3) * s(q2) + c(q2) * s(q3)) + s(q2) * L5 - L1],
+                         [s(q1) * c(q2) * c(q3) - s(q1) * s(q2) * s(q3),
+                          -s(q1) * c(q2) * s(q3) - s(q1) * c(q3) * s(q2), c(q1),
+                          -L7 * (s(q1) * c(q2) * c(q3) - s(q1) * s(q2) * s(q3)) + L6 * c(q1) + s(q1) * c(
+                              q2) * L5 + (L3 + L4) * c(q1)],
+                         [0, 0, 0, 1]])
 
         return R * T04
 
-    def __inverse_kinematics(self, pos):
+    def __inverse_kinematics(self, pos, constraints):
         L1, L2, L3, L4, L5, L6, L7 = self.L
 
         # compute q1
         X = pos[2]
         Y = -pos[0] - L2
         Z = L3 + L4 + L6
-        q1 = np.arctan2((Y * Z + X * np.sqrt(X * X + Y * Y - Z * Z)) / (X * X + Y * Y),
-                        (X * Z - Y * np.sqrt(X * X + Y * Y - Z * Z)) / (X * X + Y * Y))
+        q1 = np.arctan2((Y * Z - X * np.sqrt(X * X + Y * Y - Z * Z)) / (X * X + Y * Y),
+                        (X * Z + Y * np.sqrt(X * X + Y * Y - Z * Z)) / (X * X + Y * Y))
+        if q1 < constraints[0] or q1 > constraints[1]:
+            q1 = np.arctan2((Y * Z + X * np.sqrt(X * X + Y * Y - Z * Z)) / (X * X + Y * Y),
+                            (X * Z - Y * np.sqrt(X * X + Y * Y - Z * Z)) / (X * X + Y * Y))
 
         # compute q3
         Z1 = (pos[2] - np.cos(q1) * (L3 + L4 + L6)) / np.sin(q1)
         Z2 = pos[1] + L1
         c3 = (Z1 * Z1 + Z2 * Z2 - L5 * L5 - L7 * L7) / (-2 * L5 * L7)
-        q3_1 = np.arctan2(np.sqrt(1 - c3 * c3), c3)
-        # q3_2 = np.arctan2(-np.sqrt(1 - c3 * c3), c3)
+        q3 = np.arctan2(np.sqrt(1 - c3 * c3), c3)
+        if q3 < constraints[2] or q3 > constraints[3]:
+            q3 = np.arctan2(-np.sqrt(1 - c3 * c3), c3)
 
         # compute q2
-        B1_1 = L5 - L7 * np.cos(q3_1)
-        # B1_2 = L5 - L7 * np.cos(q3_2)
-        B2_1 = -L7 * np.sin(q3_1)
-        # B2_2 = -L7 * np.sin(q3_2)
-        q2_1 = np.arctan2((B1_1 * Z2 - B2_1 * Z1) / (B1_1 * B1_1 + B2_1 * B2_1),
-                          (B1_1 * Z1 + B2_1 * Z2) / (B1_1 * B1_1 + B2_1 * B2_1))
-        # q2_2 = np.arctan2((B1_2 * Z2 - B2_2 * Z1) / (B1_2 * B1_2 + B2_2 * B2_2),
-        #                   (B1_2 * Z1 + B2_2 * Z2) / (B1_2 * B1_2 + B2_2 * B2_2))
+        B1 = L5 - L7 * np.cos(q3)
+        B2 = -L7 * np.sin(q3)
+        q2_1 = np.arctan2((B1 * Z2 - B2 * Z1) / (B1 * B1 + B2 * B2),
+                          (B1 * Z1 + B2 * Z2) / (B1 * B1 + B2 * B2))
 
-        return np.array([q1, q2_1, q3_1])
+        return np.array([q1, q2_1, q3])
 
     def __linearJacobian(self, Q):
         q1, q2, q3 = Q
@@ -156,7 +155,7 @@ def test_1():
     L = [0.1946, 0.0875, 0.014, 0.03745, 0.16, 0.008, 0.16]
     T = 1
     Lp = 0.15
-    x0 = -(L[1] + L[2] + L[3] + L[5])
+    x0 = -L[1]
     y0 = -(L[0] + Lp / 2)
     z0 = -0.2
     H = 0.05
@@ -167,7 +166,7 @@ def test_1():
 
     # test inverse kinematics
     # get space points and orientation of end effector
-    t = np.linspace(0, T, 10)
+    t = np.linspace(0, T, 15)
     res = np.empty((12, len(t)))
     for i, t0 in enumerate(t):
         res[0:3, i] = foot_trajectory(t0, T, x0, y0, z0, H, Lp)

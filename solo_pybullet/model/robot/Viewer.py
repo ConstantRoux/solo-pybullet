@@ -65,9 +65,10 @@ class Viewer:
     def viewInverseKinematics(kinematics, points):
         Q = np.empty((12, points.shape[1]))
         pos = np.zeros((5 * points.shape[1], 3, 4))
+        constraints = np.array([0, np.pi, 0, np.pi] * 4)
 
         for i in range(points.shape[1]):
-            Q[:, i], _ = kinematics.inverse_kinematics(points[:, i], np.zeros((12,)))
+            Q[:, i], _ = kinematics.inverse_kinematics(points[:, i], np.zeros((12,)), constraints)
             for j in range(1, 5):
                 for k in range(4):
                     pos[5 * i + j, :, k] = np.transpose(kinematics.T0k(Q[3 * k:3 * (k + 1), i], j, kinematics.r[kinematics.labels[k]])[:-1, 3])
