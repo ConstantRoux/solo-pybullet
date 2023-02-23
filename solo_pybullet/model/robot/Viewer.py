@@ -4,9 +4,6 @@ from matplotlib.widgets import Slider
 
 
 class Viewer:
-    def __init__(self):
-        pass
-
     @staticmethod
     def viewConfigurations(kinematics, jacobian):
         pass

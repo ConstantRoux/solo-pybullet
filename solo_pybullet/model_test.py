@@ -7,7 +7,7 @@ import numpy as np
 import pybullet as p
 from solo_pybullet.initialization_simulation import configure_simulation
 from solo_pybullet.model.foot_trajectory.cycloid_foot_trajectory import foot_trajectory, d_foot_trajectory
-from solo_pybullet.model.robot.Kinematics import Kinematics
+from solo_pybullet.model.robot.BulletWrapper import BulletWrapper
 
 if __name__ == "__main__":
     ####################
@@ -19,9 +19,9 @@ if __name__ == "__main__":
 
     L = [0.1946, 0.0875, 0.014, 0.03745, 0.16, 0.008, 0.16]
     constraints = np.array([-np.pi, 0, 0, np.pi] * 4)
-    k = Kinematics(L)
+    k = BulletWrapper(L)
     T = 0.5
-    Lp = 0.2
+    Lp = 0.3
     x0 = -L[1] + L[2] + L[3] + L[5]
     y0 = -(L[0] + Lp / 2)
     z0 = -0.2
@@ -49,12 +49,6 @@ if __name__ == "__main__":
 
         # compute desired configuration
         q, dq = k.inverse_kinematics(P, dP, constraints)
-
-        # convert model config to pybullet config
-        for i in range(4):
-            way = 1 if i == 0 or i == 2 else -1
-            q[3 * i] = way * (q[3 * i] + np.pi/2)
-            q[3 * i + 2] += np.pi
 
         # active actuators with new configuration
         p.setJointMotorControlArray(robot_id, rev_joint_idx, controlMode=p.POSITION_CONTROL,
