@@ -5,7 +5,7 @@ from matplotlib.widgets import Slider
 
 class Viewer:
     @staticmethod
-    def viewConfigurations(kinematics, jacobian):
+    def viewConfigurations(kinematics):
         pass
 
     @staticmethod

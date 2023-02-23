@@ -67,9 +67,11 @@ class Kinematics:
                               q2) * L5 + (L3 + L4) * c(q1)],
                          [0, 0, 0, 1]])
 
-        return R * T04
+        return (R * T04)[0:3, 3].flatten()
 
     def __inverse_kinematics(self, pos, constraints):
+        # TODO optimize calculus
+        # TODO constraint q2 joint + exception if any solution found
         L1, L2, L3, L4, L5, L6, L7 = self.L
 
         # compute q1
@@ -103,10 +105,10 @@ class Kinematics:
         L1, L2, L3, L4, L5, L6, L7 = self.L
 
         return np.matrix([[c(q1) * (-L3 - L4 - L6) - s(q1) * (c(q2) * L5 - L7 * c(q2 + q3)),
-                           c(1) * (L7 * s(q2 + q3) - s(q2) * L5), c(q1) * L7 * s(q2 + q3)],
+                           c(q1) * (L7 * s(q2 + q3) - s(q2) * L5), c(q1) * L7 * s(q2 + q3)],
                           [0, c(q2) * L5 - L7 * c(q2 + q3), -L7 * c(q2 + q3)],
                           [s(q1) * (-L3 - L4 - L6) + c(q1) * (c(q2) * L5 - L7 * c(q2 + q3)),
-                           s(1) * (L7 * s(q2 + q3) - s(q2) * L5), s(q1) * L7 * s(q2 + q3)]])
+                           s(q1) * (L7 * s(q2 + q3) - s(q2) * L5), s(q1) * L7 * s(q2 + q3)]])
 
     def __T01(self, q1):
         L = self.L
@@ -177,5 +179,45 @@ def test_1():
     Viewer.viewInverseKinematics(kinematics, res)
 
 
+def test_2():
+    # imports
+    from solo_pybullet.model.foot_trajectory.cycloid_foot_trajectory import foot_trajectory, d_foot_trajectory
+
+    # variables
+    L = [0.1946, 0.0875, 0.014, 0.03745, 0.16, 0.008, 0.16]
+    T = 1
+    Lp = 0.15
+    x0 = -L[1]
+    y0 = -(L[0] + Lp / 2)
+    z0 = -0.2
+    H = 0.05
+    kinematics = Kinematics(L)
+    constraints = np.array([0, np.pi, 0, np.pi] * 4)
+
+    # test inverse kinematics
+    # get space points and orientation of end effector
+    t = np.linspace(0, 2 * T, 200)
+    res = np.empty((12, len(t)))
+    d_res = np.empty((12, len(t)))
+
+    for i, t0 in enumerate(t):
+        res[0:3, i] = foot_trajectory(t0, T, x0, y0, z0, H, Lp)
+        res[3:6, i] = foot_trajectory(t0, T, x0, y0, z0, H, Lp)
+        res[6:9, i] = foot_trajectory(t0, T, x0, y0, z0, H, Lp, y=1)
+        res[9:12, i] = foot_trajectory(t0, T, x0, y0, z0, H, Lp, y=1)
+
+        d_res[0:3, i] = d_foot_trajectory(t0, T, x0, y0, z0, H, Lp)
+        d_res[3:6, i] = d_foot_trajectory(t0, T, x0, y0, z0, H, Lp)
+        d_res[6:9, i] = d_foot_trajectory(t0, T, x0, y0, z0, H, Lp, y=1)
+        d_res[9:12, i] = d_foot_trajectory(t0, T, x0, y0, z0, H, Lp, y=1)
+
+        q, dq = kinematics.inverse_kinematics(res[:, i], d_res[:, i], constraints)
+
+        pos, d_pos = kinematics.forward_kinematics(q, dq)
+
+        print(np.linalg.norm(d_pos[3:6]-d_res[3:6, i]))
+
+
 if __name__ == '__main__':
-    test_1()
+    # test_1()
+    test_2()
