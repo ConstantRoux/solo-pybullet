@@ -37,12 +37,12 @@ class Kinematics:
 
         return P, dP
 
-    def inverse_kinematics(self, P, dP, c):
+    def inverse_kinematics(self, P, dP, constraints):
         Q = np.zeros((12,))
         dQ = np.zeros((12,))
 
         for i in range(4):
-            Q[3 * i: 3 * (i + 1)] = self.__inverse_kinematics(P[3 * i: 3 * (i + 1)], c[4 * i: 4 * (i + 1)])
+            Q[3 * i: 3 * (i + 1)] = self.__inverse_kinematics(P[3 * i: 3 * (i + 1)], constraints[4 * i: 4 * (i + 1)])
             dQ[3 * i: 3 * (i + 1)] = np.linalg.pinv(self.__linearJacobian(Q[3 * i: 3 * (i + 1)])) @ dP[3 * i: 3 * (i + 1)]
         return Q, dQ
 
@@ -70,8 +70,9 @@ class Kinematics:
         return (R * T04)[0:3, 3].flatten()
 
     def __inverse_kinematics(self, pos, constraints):
+        # TODO check if robot is able to reach the desired position
         # TODO optimize calculus
-        # TODO constraint q2 joint + exception if any solution found
+        # TODO constraint q2 joint + exception if no solution has been found
         L1, L2, L3, L4, L5, L6, L7 = self.L
 
         # compute q1
@@ -219,5 +220,5 @@ def test_2():
 
 
 if __name__ == '__main__':
-    # test_1()
-    test_2()
+    test_1()
+    # test_2()
