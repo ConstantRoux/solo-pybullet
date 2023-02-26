@@ -21,7 +21,7 @@ def configure_simulation(dt, fixedBase=False):
     p.loadURDF("plane.urdf")
 
     # load solo12 model for pybullet
-    robot_start_pos = [0, 0, 0.4] # 0 0 .325 c'est marrant
+    robot_start_pos = [0, 0, 0.35]
     robot_start_orientation = p.getQuaternionFromEuler([0, 0, 0])
     p.setAdditionalSearchPath("/opt/openrobots/share/example-robot-data/robots/solo_description/robots")
     robot_id = p.loadURDF("solo12.urdf", robot_start_pos, robot_start_orientation, useFixedBase=fixedBase)
