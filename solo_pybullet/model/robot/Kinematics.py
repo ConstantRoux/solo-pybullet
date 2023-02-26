@@ -32,7 +32,7 @@ class Kinematics:
         dP = np.zeros(12, )
 
         for i in range(4):
-            P[3 * i: 3 * (i + 1)] = self.__forward_kinematics(Q[3 * i: 3 * (i + 1)], self.r[self.labels[i]])
+            P[3 * i: 3 * (i + 1)] = self.__forward_kinematics(Q[3 * i: 3 * (i + 1)])
             dP[3 * i: 3 * (i + 1)] = self.__linearJacobian(Q[3 * i: 3 * (i + 1)]) @ dQ[3 * i: 3 * (i + 1)]
 
         return P, dP
@@ -52,7 +52,7 @@ class Kinematics:
             J[:, 3 * i: 3 * (i + 1)] = self.__linearJacobian(Q[3 * i: 3 * (i + 1)])
         return J
 
-    def __forward_kinematics(self, Q, R):
+    def __forward_kinematics(self, Q):
         q1, q2, q3 = Q
         L1, L2, L3, L4, L5, L6, L7 = self.L
         T04 = np.matrix([[c(q1) * c(q2) * c(q3) - c(q1) * s(q2) * s(q3),
@@ -67,7 +67,7 @@ class Kinematics:
                               q2) * L5 + (L3 + L4) * c(q1)],
                          [0, 0, 0, 1]])
 
-        return (R * T04)[0:3, 3].flatten()
+        return T04[0:3, 3].flatten()
 
     def __inverse_kinematics(self, pos, constraints):
         # TODO check if robot is able to reach the desired position
@@ -159,7 +159,7 @@ def test_1():
     T = 1
     Lp = 0.15
     x0 = -L[1]
-    y0 = -(L[0] + Lp / 2)
+    y0 = -L[0] - Lp/2
     z0 = -0.2
     H = 0.05
     kinematics = Kinematics(L)
@@ -172,53 +172,13 @@ def test_1():
     t = np.linspace(0, T, 15)
     res = np.empty((12, len(t)))
     for i, t0 in enumerate(t):
-        res[0:3, i] = foot_trajectory(t0, T, x0, y0, z0, H, Lp)
-        res[3:6, i] = foot_trajectory(t0, T, x0, y0, z0, H, Lp)
-        res[6:9, i] = foot_trajectory(t0, T, x0, y0, z0, H, Lp, y=1)
-        res[9:12, i] = foot_trajectory(t0, T, x0, y0, z0, H, Lp, y=1)
+        res[0:3, i] = foot_trajectory(t0, T, x0, y0, z0, H, Lp, dir=False)
+        res[3:6, i] = foot_trajectory(t0, T, x0, y0, z0, H, Lp, dir=False)
+        res[6:9, i] = foot_trajectory(t0, T, x0, y0, z0, H, Lp, dir=False)
+        res[9:12, i] = foot_trajectory(t0, T, x0, y0, z0, H, Lp, dir=False)
 
     Viewer.viewInverseKinematics(kinematics, res)
 
 
-def test_2():
-    # imports
-    from solo_pybullet.model.foot_trajectory.cycloid_foot_trajectory import foot_trajectory, d_foot_trajectory
-
-    # variables
-    L = [0.1946, 0.0875, 0.014, 0.03745, 0.16, 0.008, 0.16]
-    T = 1
-    Lp = 0.15
-    x0 = -L[1]
-    y0 = -(L[0] + Lp / 2)
-    z0 = -0.2
-    H = 0.05
-    kinematics = Kinematics(L)
-    constraints = np.array([0, np.pi, 0, np.pi] * 4)
-
-    # test inverse kinematics
-    # get space points and orientation of end effector
-    t = np.linspace(0, 2 * T, 200)
-    res = np.empty((12, len(t)))
-    d_res = np.empty((12, len(t)))
-
-    for i, t0 in enumerate(t):
-        res[0:3, i] = foot_trajectory(t0, T, x0, y0, z0, H, Lp)
-        res[3:6, i] = foot_trajectory(t0, T, x0, y0, z0, H, Lp)
-        res[6:9, i] = foot_trajectory(t0, T, x0, y0, z0, H, Lp, y=1)
-        res[9:12, i] = foot_trajectory(t0, T, x0, y0, z0, H, Lp, y=1)
-
-        d_res[0:3, i] = d_foot_trajectory(t0, T, x0, y0, z0, H, Lp)
-        d_res[3:6, i] = d_foot_trajectory(t0, T, x0, y0, z0, H, Lp)
-        d_res[6:9, i] = d_foot_trajectory(t0, T, x0, y0, z0, H, Lp, y=1)
-        d_res[9:12, i] = d_foot_trajectory(t0, T, x0, y0, z0, H, Lp, y=1)
-
-        q, dq = kinematics.inverse_kinematics(res[:, i], d_res[:, i], constraints)
-
-        pos, d_pos = kinematics.forward_kinematics(q, dq)
-
-        print(np.linalg.norm(d_pos[3:6]-d_res[3:6, i]))
-
-
 if __name__ == '__main__':
     test_1()
-    # test_2()

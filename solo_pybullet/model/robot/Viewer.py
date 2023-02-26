@@ -11,12 +11,13 @@ class Viewer:
     @staticmethod
     def viewForwardKinematics(kinematics):
         f, ax = plt.subplots()
-        f.suptitle(r'Visualisation du MGD')
+        f.suptitle(r'Forward geometric model view')
         ax_q = [None] * 3
         sl_q = [None] * 3
         ax = plt.axes(projection='3d')
         ax.set_proj_type('ortho')
         f.subplots_adjust(left=0.30)
+        legends = ['FL', 'FR', 'HL', 'HR']
 
         q = np.zeros((3,))
 
@@ -34,7 +35,12 @@ class Viewer:
             ax.axes.set_ylim3d(bottom=-1, top=1)
             ax.axes.set_zlim3d(bottom=-1, top=1)
             for j in range(4):
-                ax.plot3D(c_r[:, 0, j], c_r[:, 1, j], c_r[:, 2, j], linewidth='1')
+                ax.plot3D(c_r[:, 0, j], c_r[:, 1, j], c_r[:, 2, j], linewidth='1', label=legends[j])
+
+            ax.set_xlabel(r'$x$')
+            ax.set_ylabel(r'$y$')
+            ax.set_zlabel(r'$z$')
+            ax.legend()
 
         draw()
 
@@ -72,9 +78,13 @@ class Viewer:
 
         fig = plt.figure()
         ax = plt.axes(projection='3d')
-        ax.set_title('Visualisation du MGI')
-        ax.scatter3D(points[0, :], points[1, :], points[2, :])
+        ax.set_title('Inverse Geometric model view')
+        ax.plot3D(points[0, :], points[1, :], points[2, :], linestyle='dashed', label='expected foot trajectory')
         for k in range(4):
             for i in range(points.shape[1]):
                 ax.plot3D(pos[5 * i: 5 * (i + 1), 0, k], pos[5 * i: 5 * (i + 1), 1, k], pos[5 * i: 5 * (i + 1), 2, k])
+        ax.set_xlabel(r'$x$')
+        ax.set_ylabel(r'$y$')
+        ax.set_zlabel(r'$z$')
+        ax.legend()
         plt.show()
