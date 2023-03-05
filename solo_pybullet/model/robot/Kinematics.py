@@ -151,7 +151,7 @@ class Kinematics:
 
 def test_1():
     # imports
-    from solo_pybullet.model.foot_trajectory.cycloid_foot_trajectory import foot_trajectory
+    from solo_pybullet.model.foot_trajectory.CycloidFootTrajectory import CycloidFootTrajectory
     from solo_pybullet.model.robot.Viewer import Viewer
 
     # variables
@@ -172,10 +172,10 @@ def test_1():
     t = np.linspace(0, T, 15)
     res = np.empty((12, len(t)))
     for i, t0 in enumerate(t):
-        res[0:3, i] = foot_trajectory(t0, T, x0, y0, z0, H, Lp, dir=False)
-        res[3:6, i] = foot_trajectory(t0, T, x0, y0, z0, H, Lp, dir=False)
-        res[6:9, i] = foot_trajectory(t0, T, x0, y0, z0, H, Lp, dir=False)
-        res[9:12, i] = foot_trajectory(t0, T, x0, y0, z0, H, Lp, dir=False)
+        res[0:3, i] = CycloidFootTrajectory.f(t0, T, np.array([x0, y0, z0]), H, np.array([0, Lp]), dir=False)
+        res[3:6, i] = CycloidFootTrajectory.f(t0, T, np.array([x0, y0, z0]), H, np.array([0, Lp]), dir=False)
+        res[6:9, i] = CycloidFootTrajectory.f(t0, T, np.array([x0, y0, z0]), H, np.array([0, Lp]), dir=False)
+        res[9:12, i] = CycloidFootTrajectory.f(t0, T,np.array([x0, y0, z0]), H, np.array([0, Lp]), dir=False)
 
     Viewer.viewInverseKinematics(kinematics, res)
 

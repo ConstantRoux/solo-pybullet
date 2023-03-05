@@ -7,7 +7,7 @@ import pybullet as p
 from matplotlib import pyplot as plt
 from solo_pybullet.initialization_simulation import configure_simulation
 from solo_pybullet.logger.Logger import Logger
-from solo_pybullet.model.foot_trajectory.cycloid_foot_trajectory import foot_trajectory, d_foot_trajectory
+from solo_pybullet.model.foot_trajectory.CycloidFootTrajectory import CycloidFootTrajectory
 from solo_pybullet.model.robot.BulletWrapper import BulletWrapper
 
 
@@ -19,21 +19,20 @@ if __name__ == "__main__":
     constraints = np.array([0, np.pi, 0, np.pi] * 4)
     k = BulletWrapper(L)
 
-    T = 0.5
-    Lp = 0.15
+    T = 1
+    Lpx = -0.25
+    Lpy = 0.15
     x0 = -L[1]
-    y0 = -(L[0] + Lp/2)
+    y0 = -(L[0] + Lpy/2)
     z0 = -0.15
-    H = 0.05
+    H = 0.02
 
-    duration = 5 * T  # define the duration of the simulation in seconds
+    duration = 4000 * T  # define the duration of the simulation in seconds
     dt = 0.01  # define the time step in second
-    robot_id, rev_joint_idx = configure_simulation(dt, False)  # configure and load model in pybullet and pinocchio
-
-    ####################
+    robot_id, rev_joint_idx = configure_simulation(dt, False)
     #      LOGGER     ##
     ####################
-    log = True
+    log = False
     if log:
         l = Logger()
         titles = [r'expected $q$', r'simulated $q$', r'expected $\dot{q}$', r'simulated $\dot{q}$',
@@ -50,16 +49,16 @@ if __name__ == "__main__":
 
         # get feet positions
         P = np.zeros((12,))
-        P[0:3] = foot_trajectory(dt * i + T/2, T, x0, y0, z0, H, Lp, dir=False)
-        P[3:6] = foot_trajectory(dt * i, T, x0, y0, z0, H, Lp, dir=False)
-        P[6:9] = foot_trajectory((dt * i + T/2), T, x0, y0, z0, H, Lp, dir=True)
-        P[9:12] = foot_trajectory((dt * i + T/2) + T/2, T, x0, y0, z0, H, Lp, dir=True)
+        P[0:3] = CycloidFootTrajectory.f(dt * i + T/2, T, np.array([x0, y0, z0]), H, np.array([Lpx, Lpy]), dir=False)
+        P[3:6] = CycloidFootTrajectory.f(dt * i, T, np.array([x0, y0, z0]), H, np.array([Lpx, Lpy]), dir=False)
+        P[6:9] = CycloidFootTrajectory.f((dt * i + T/2), T, np.array([x0, y0, z0]), H, np.array([Lpx, Lpy]), dir=True)
+        P[9:12] = CycloidFootTrajectory.f((dt * i + T/2) + T/2, T, np.array([x0, y0, z0]), H, np.array([Lpx, Lpy]), dir=True)
 
         dP = np.zeros((12,))
-        dP[0:3] = d_foot_trajectory(dt * i + T/2, T, H, Lp, dir=False)
-        dP[3:6] = d_foot_trajectory(dt * i, T, H, Lp, dir=False)
-        dP[6:9] = d_foot_trajectory((dt * i + T/2), T, H, Lp, dir=True)
-        dP[9:12] = d_foot_trajectory((dt * i + T/2) + T/2, T, H, Lp, dir=True)
+        dP[0:3] = CycloidFootTrajectory.df(dt * i + T/2, T, H, np.array([Lpx, Lpy]), dir=False)
+        dP[3:6] = CycloidFootTrajectory.df(dt * i, T, H, np.array([Lpx, Lpy]), dir=False)
+        dP[6:9] = CycloidFootTrajectory.df((dt * i + T/2), T, H, np.array([Lpx, Lpy]), dir=True)
+        dP[9:12] = CycloidFootTrajectory.df((dt * i + T/2) + T/2, T, H, np.array([Lpx, Lpy]), dir=True)
 
         # compute desired configuration
         q, dq = k.inverse_kinematics(P, dP, constraints)

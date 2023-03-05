@@ -82,7 +82,7 @@ class Viewer:
         ax.plot3D(points[0, :], points[1, :], points[2, :], linestyle='dashed', label='expected foot trajectory')
         for k in range(4):
             for i in range(points.shape[1]):
-                ax.plot3D(pos[5 * i: 5 * (i + 1), 0, k], pos[5 * i: 5 * (i + 1), 1, k], pos[5 * i: 5 * (i + 1), 2, k])
+                ax.plot3D(pos[5 * i: 5 * (i + 1), 0, k], pos[5 * i: 5 * (i + 1), 1, k], pos[5 * i: 5 * (i + 1), 2, k], alpha=0.5)
         ax.set_xlabel(r'$x$')
         ax.set_ylabel(r'$y$')
         ax.set_zlabel(r'$z$')
