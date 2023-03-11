@@ -6,6 +6,7 @@ from solo_pybullet.model.robot.Kinematics import Kinematics
 
 class BulletWrapper:
     def __init__(self, L):
+        self.L = L
         self.kinematics = Kinematics(L)
 
     def forward_kinematics(self, Q, dQ):

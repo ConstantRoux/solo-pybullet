@@ -4,8 +4,9 @@
 import time
 import numpy as np
 import pybullet as p
-from matplotlib import pyplot as plt
-from solo_pybullet.initialization_simulation import configure_simulation
+
+from solo_pybullet.controller.OptimizationController import OptimizationController
+from solo_pybullet.simulation.initialization_simulation import configure_simulation
 from solo_pybullet.logger.Logger import Logger
 from solo_pybullet.model.foot_trajectory.CycloidFootTrajectory import CycloidFootTrajectory
 from solo_pybullet.model.robot.BulletWrapper import BulletWrapper
@@ -20,19 +21,22 @@ if __name__ == "__main__":
     k = BulletWrapper(L)
 
     T = 1
-    Lpx = -0.25
+    Lpx = 0.
     Lpy = 0.15
     x0 = -L[1]
     y0 = -(L[0] + Lpy/2)
     z0 = -0.15
     H = 0.02
 
-    duration = 4000 * T  # define the duration of the simulation in seconds
+    duration = 4 * T  # define the duration of the simulation in seconds
     dt = 0.01  # define the time step in second
     robot_id, rev_joint_idx = configure_simulation(dt, False)
+
+    Pc = np.array([[0, 0], [2.5, 2.5], [5, 5]])
+    controller = OptimizationController(k, T, dt, H, 0.2, z0, Pc)
     #      LOGGER     ##
     ####################
-    log = False
+    log = True
     if log:
         l = Logger()
         titles = [r'expected $q$', r'simulated $q$', r'expected $\dot{q}$', r'simulated $\dot{q}$',
@@ -70,7 +74,34 @@ if __name__ == "__main__":
             l.data[4][1][:, i] = P
             l.data[6][1][:, i] = dP
 
-        # active actuators with new configuration
+        # if dt * i > 1:
+        #     # get current pos
+        #     pos, rot = p.getBasePositionAndOrientation(robot_id)
+        #     euler = p.getEulerFromQuaternion(rot)
+        #
+        #     # get feet pos
+        #     p_q = np.zeros((12,))
+        #     p_dq = np.zeros((12, ))
+        #     p_Q = p.getJointStates(robot_id, rev_joint_idx)
+        #     Pf = np.zeros((8,))
+        #     for j in range(12):
+        #         p_q[j] = p_Q[j][0]
+        #         p_dq[j] = p_Q[j][1]
+        #     P, *_ = k.forward_kinematics(p_q, p_dq)
+        #
+        #     for j in range(4):
+        #         Pf[2 * j] = P[3 * j]
+        #         Pf[2 * j + 1] = P[3 * j + 1]
+        #
+        #     q, dq = controller.controller(dt * i, constraints, np.array([pos[0], pos[1], euler[2]]), Pf)
+        #
+        #     # active actuators with new configuration
+        #     p.setJointMotorControlArray(robot_id, rev_joint_idx, controlMode=p.POSITION_CONTROL,
+        #                                 targetPositions=q, targetVelocities=dq)
+        # else:
+        #     p.setJointMotorControlArray(robot_id, rev_joint_idx, controlMode=p.POSITION_CONTROL,
+        #                                 targetPositions=np.array([0, np.pi/4, -np.pi/2, 0, np.pi/4, -np.pi/2, 0, np.pi/4, -np.pi/2, 0, np.pi/4, -np.pi/2]))
+
         p.setJointMotorControlArray(robot_id, rev_joint_idx, controlMode=p.POSITION_CONTROL,
                                     targetPositions=q, targetVelocities=dq)
 

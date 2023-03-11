@@ -2,6 +2,8 @@ import numpy as np
 from numpy import cos as c
 from numpy import sin as s
 
+from solo_pybullet.model.foot_trajectory.BezierFootTrajectory import BezierFootTrajectory
+
 
 class Kinematics:
     def __init__(self, L):
@@ -172,10 +174,14 @@ def test_1():
     t = np.linspace(0, T, 15)
     res = np.empty((12, len(t)))
     for i, t0 in enumerate(t):
-        res[0:3, i] = CycloidFootTrajectory.f(t0, T, np.array([x0, y0, z0]), H, np.array([0, Lp]), dir=False)
-        res[3:6, i] = CycloidFootTrajectory.f(t0, T, np.array([x0, y0, z0]), H, np.array([0, Lp]), dir=False)
-        res[6:9, i] = CycloidFootTrajectory.f(t0, T, np.array([x0, y0, z0]), H, np.array([0, Lp]), dir=False)
-        res[9:12, i] = CycloidFootTrajectory.f(t0, T,np.array([x0, y0, z0]), H, np.array([0, Lp]), dir=False)
+        # res[0:3, i] = CycloidFootTrajectory.f(t0, T, np.array([x0, y0, z0]), H, np.array([0, Lp]), dir=False)
+        # res[3:6, i] = CycloidFootTrajectory.f(t0, T, np.array([x0, y0, z0]), H, np.array([0, Lp]), dir=False)
+        # res[6:9, i] = CycloidFootTrajectory.f(t0, T, np.array([x0, y0, z0]), H, np.array([0, Lp]), dir=False)
+        # res[9:12, i] = CycloidFootTrajectory.f(t0, T,np.array([x0, y0, z0]), H, np.array([0, Lp]), dir=False)
+        res[0:3, i] = BezierFootTrajectory.f(t0, T, np.array([x0, y0, z0]), np.array([x0, y0 + Lp, z0 + H]))
+        res[3:6, i] = BezierFootTrajectory.f(t0, T, np.array([x0, y0, z0]), np.array([x0, y0 + Lp, z0 + H]))
+        res[6:9, i] = BezierFootTrajectory.f(t0, T, np.array([x0, y0, z0]), np.array([x0, y0 + Lp, z0 + H]))
+        res[9:12, i] = BezierFootTrajectory.f(t0, T, np.array([x0, y0, z0]), np.array([x0, y0 + Lp, z0 + H]))
 
     Viewer.viewInverseKinematics(kinematics, res)
 

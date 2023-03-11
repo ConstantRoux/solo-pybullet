@@ -1,6 +1,6 @@
 import numpy as np
 import pinocchio as pin
-from solo_pybullet.PD import PD
+from solo_pybullet.controller.PD import PD
 from numpy.linalg import pinv
 
 ########################
