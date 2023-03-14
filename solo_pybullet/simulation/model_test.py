@@ -6,13 +6,16 @@ import numpy as np
 import pybullet as p
 
 from solo_pybullet.controller.OptimizationController import OptimizationController
+from solo_pybullet.controller.parallel_controller.ParallelController import ParallelController
+from solo_pybullet.controller.parallel_controller.Parameters import Parameters
 from solo_pybullet.simulation.initialization_simulation import configure_simulation
 from solo_pybullet.logger.Logger import Logger
 from solo_pybullet.model.foot_trajectory.CycloidFootTrajectory import CycloidFootTrajectory
+from solo_pybullet.model.foot_trajectory.BezierFootTrajectory import BezierFootTrajectory
 from solo_pybullet.model.robot.BulletWrapper import BulletWrapper
 
 
-if __name__ == "__main__":
+def test_1():
     ####################
     #  INITIALIZATION ##
     ####################
@@ -20,15 +23,15 @@ if __name__ == "__main__":
     constraints = np.array([0, np.pi, 0, np.pi] * 4)
     k = BulletWrapper(L)
 
-    T = 1
+    T = 0.5
     Lpx = 0.
-    Lpy = 0.15
+    Lpy = 0.
     x0 = -L[1]
     y0 = -(L[0] + Lpy/2)
     z0 = -0.15
-    H = 0.02
+    H = 0.05
 
-    duration = 4 * T  # define the duration of the simulation in seconds
+    duration = 4000 * T  # define the duration of the simulation in seconds
     dt = 0.01  # define the time step in second
     robot_id, rev_joint_idx = configure_simulation(dt, False)
 
@@ -51,72 +54,74 @@ if __name__ == "__main__":
         # real time simulation
         t0 = time.perf_counter()
 
-        # get feet positions
-        P = np.zeros((12,))
-        P[0:3] = CycloidFootTrajectory.f(dt * i + T/2, T, np.array([x0, y0, z0]), H, np.array([Lpx, Lpy]), dir=False)
-        P[3:6] = CycloidFootTrajectory.f(dt * i, T, np.array([x0, y0, z0]), H, np.array([Lpx, Lpy]), dir=False)
-        P[6:9] = CycloidFootTrajectory.f((dt * i + T/2), T, np.array([x0, y0, z0]), H, np.array([Lpx, Lpy]), dir=True)
-        P[9:12] = CycloidFootTrajectory.f((dt * i + T/2) + T/2, T, np.array([x0, y0, z0]), H, np.array([Lpx, Lpy]), dir=True)
+        # init
+        if dt * i < T:
+            P = np.zeros((12,))
+            i = 0
+            P[0:3] = BezierFootTrajectory.f(dt * i + T / 2, T, np.array([x0, y0, z0]),
+                                            np.array([x0 + Lpx, y0 + Lpy, z0 + H]), dir=False)
+            P[3:6] = BezierFootTrajectory.f(dt * i, T, np.array([x0, y0, z0]), np.array([x0 + Lpx, y0 + Lpy, z0 + H]),
+                                            dir=False)
+            P[6:9] = BezierFootTrajectory.f((dt * i + T / 2), T, np.array([x0, y0, z0]),
+                                            np.array([x0 + Lpx, y0 + Lpy, z0 + H]), dir=True)
+            P[9:12] = BezierFootTrajectory.f((dt * i + T / 2) + T / 2, T, np.array([x0, y0, z0]),
+                                             np.array([x0 + Lpx, y0 + Lpy, z0 + H]), dir=True)
 
-        dP = np.zeros((12,))
-        dP[0:3] = CycloidFootTrajectory.df(dt * i + T/2, T, H, np.array([Lpx, Lpy]), dir=False)
-        dP[3:6] = CycloidFootTrajectory.df(dt * i, T, H, np.array([Lpx, Lpy]), dir=False)
-        dP[6:9] = CycloidFootTrajectory.df((dt * i + T/2), T, H, np.array([Lpx, Lpy]), dir=True)
-        dP[9:12] = CycloidFootTrajectory.df((dt * i + T/2) + T/2, T, H, np.array([Lpx, Lpy]), dir=True)
+            dP = np.zeros((12,))
+            dP[0:3] = BezierFootTrajectory.df(dt * i + T / 2, T, np.array([x0, y0, z0]),
+                                              np.array([x0 + Lpx, y0 + Lpy, z0 + H]), dir=False)
+            dP[3:6] = BezierFootTrajectory.df(dt * i, T, np.array([x0, y0, z0]), np.array([x0 + Lpx, y0 + Lpy, z0 + H]),
+                                              dir=False)
+            dP[6:9] = BezierFootTrajectory.df((dt * i + T / 2), T, np.array([x0, y0, z0]),
+                                              np.array([x0 + Lpx, y0 + Lpy, z0 + H]), dir=True)
+            dP[9:12] = BezierFootTrajectory.df((dt * i + T / 2) + T / 2, T, np.array([x0, y0, z0]),
+                                               np.array([x0 + Lpx, y0 + Lpy, z0 + H]),
+                                               dir=True)
 
-        # compute desired configuration
-        q, dq = k.inverse_kinematics(P, dP, constraints)
+            # compute desired configuration
+            q, dq = k.inverse_kinematics(P, dP, constraints)
 
-        # logger
-        if log:
-            l.data[0][1][:, i] = q
-            l.data[2][1][:, i] = dq
-            l.data[4][1][:, i] = P
-            l.data[6][1][:, i] = dP
+            p.setJointMotorControlArray(robot_id, rev_joint_idx, controlMode=p.POSITION_CONTROL,
+                                        targetPositions=q, targetVelocities=dq)
+        else:
+            P = np.zeros((12,))
+            P[0:3] = BezierFootTrajectory.f(dt * i + T / 2, T, np.array([x0, y0, z0]), np.array([x0 + Lpx, y0 + Lpy, z0 + H]), dir=False)
+            P[3:6] = BezierFootTrajectory.f(dt * i, T, np.array([x0, y0, z0]), np.array([x0 + Lpx, y0 + Lpy, z0 + H]), dir=False)
+            P[6:9] = BezierFootTrajectory.f((dt * i + T / 2), T, np.array([x0, y0, z0]), np.array([x0 + Lpx, y0 + Lpy, z0 + H]), dir=True)
+            P[9:12] = BezierFootTrajectory.f((dt * i + T / 2) + T / 2, T, np.array([x0, y0, z0]), np.array([x0 + Lpx, y0 + Lpy, z0 + H]), dir=True)
 
-        # if dt * i > 1:
-        #     # get current pos
-        #     pos, rot = p.getBasePositionAndOrientation(robot_id)
-        #     euler = p.getEulerFromQuaternion(rot)
-        #
-        #     # get feet pos
-        #     p_q = np.zeros((12,))
-        #     p_dq = np.zeros((12, ))
-        #     p_Q = p.getJointStates(robot_id, rev_joint_idx)
-        #     Pf = np.zeros((8,))
-        #     for j in range(12):
-        #         p_q[j] = p_Q[j][0]
-        #         p_dq[j] = p_Q[j][1]
-        #     P, *_ = k.forward_kinematics(p_q, p_dq)
-        #
-        #     for j in range(4):
-        #         Pf[2 * j] = P[3 * j]
-        #         Pf[2 * j + 1] = P[3 * j + 1]
-        #
-        #     q, dq = controller.controller(dt * i, constraints, np.array([pos[0], pos[1], euler[2]]), Pf)
-        #
-        #     # active actuators with new configuration
-        #     p.setJointMotorControlArray(robot_id, rev_joint_idx, controlMode=p.POSITION_CONTROL,
-        #                                 targetPositions=q, targetVelocities=dq)
-        # else:
-        #     p.setJointMotorControlArray(robot_id, rev_joint_idx, controlMode=p.POSITION_CONTROL,
-        #                                 targetPositions=np.array([0, np.pi/4, -np.pi/2, 0, np.pi/4, -np.pi/2, 0, np.pi/4, -np.pi/2, 0, np.pi/4, -np.pi/2]))
+            dP = np.zeros((12,))
+            dP[0:3] = BezierFootTrajectory.df(dt * i + T / 2, T, np.array([x0, y0, z0]), np.array([x0 + Lpx, y0 + Lpy, z0 + H]), dir=False)
+            dP[3:6] = BezierFootTrajectory.df(dt * i, T, np.array([x0, y0, z0]), np.array([x0 + Lpx, y0 + Lpy, z0 + H]), dir=False)
+            dP[6:9] = BezierFootTrajectory.df((dt * i + T / 2), T, np.array([x0, y0, z0]), np.array([x0 + Lpx, y0 + Lpy, z0 + H]), dir=True)
+            dP[9:12] = BezierFootTrajectory.df((dt * i + T / 2) + T / 2, T, np.array([x0, y0, z0]), np.array([x0 + Lpx, y0 + Lpy, z0 + H]),
+                                             dir=True)
 
-        p.setJointMotorControlArray(robot_id, rev_joint_idx, controlMode=p.POSITION_CONTROL,
-                                    targetPositions=q, targetVelocities=dq)
+            # compute desired configuration
+            q, dq = k.inverse_kinematics(P, dP, constraints)
+
+            # logger
+            if log:
+                l.data[0][1][:, i] = q
+                l.data[2][1][:, i] = dq
+                l.data[4][1][:, i] = P
+                l.data[6][1][:, i] = dP
+
+            p.setJointMotorControlArray(robot_id, rev_joint_idx, controlMode=p.POSITION_CONTROL,
+                                        targetPositions=q, targetVelocities=dq)
+
+            # logger
+            if log:
+                p_Q = p.getJointStates(robot_id, rev_joint_idx)
+                for j in range(12):
+                    q[j] = p_Q[j][0]
+                    dq[j] = p_Q[j][1]
+                l.data[1][1][:, i] = q
+                l.data[3][1][:, i] = dq
+                l.data[5][1][:, i], l.data[7][1][:, i] = k.forward_kinematics(q, dq)
 
         # next step simulation
         p.stepSimulation()
-
-        # logger
-        if log:
-            p_Q = p.getJointStates(robot_id, rev_joint_idx)
-            for j in range(12):
-                q[j] = p_Q[j][0]
-                dq[j] = p_Q[j][1]
-            l.data[1][1][:, i] = q
-            l.data[3][1][:, i] = dq
-            l.data[5][1][:, i], l.data[7][1][:, i] = k.forward_kinematics(q, dq)
 
         # real time simulation
         t_sleep = dt - (time.perf_counter() - t0)
@@ -125,10 +130,53 @@ if __name__ == "__main__":
 
     # logger
     if log:
-        l.plot_channel([0, 1], int(duration / dt / 2), -1, 3, 4)
-        l.plot_channel([2, 3], int(duration / dt / 2), -1, 3, 4)
-        l.plot_channel([4, 5], int(duration / dt / 2), -1, 3, 4)
-        l.plot_channel([6, 7], int(duration / dt / 2), -1, 3, 4)
+        l.plot_channel([0, 1], 0, -1, 3, 4)
+        l.plot_channel([2, 3], 0, -1, 3, 4)
+        l.plot_channel([4, 5], 0, -1, 3, 4)
+        l.plot_channel([6, 7], 0, -1, 3, 4)
 
     # quit pybullet
     p.disconnect()
+
+
+def test_2():
+    ####################
+    #  INITIALIZATION ##
+    ####################
+    L = [0.1946, 0.0875, 0.014, 0.03745, 0.16, 0.008, 0.16]
+    constraints = np.array([0, np.pi, 0, np.pi] * 4)
+    k = BulletWrapper(L)
+
+    duration = 3600  # define the duration of the simulation in seconds
+    dt = 0.01  # define the time step in second
+    robot_id, rev_joint_idx = configure_simulation(dt, False)
+    Parameters.init_params()
+
+    ###############
+    #  MAIN LOOP ##
+    ###############
+    for i in range(int(duration / dt)):
+        # real time simulation
+        t0 = time.perf_counter()
+
+        # compute desired configuration
+        q, _ = ParallelController.controller(k, *Parameters.get_params())
+
+        p.setJointMotorControlArray(robot_id, rev_joint_idx, controlMode=p.POSITION_CONTROL,
+                                    targetPositions=q)
+
+        # next step simulation
+        p.stepSimulation()
+
+        # real time simulation
+        t_sleep = dt - (time.perf_counter() - t0)
+        if t_sleep > 0:
+            time.sleep(t_sleep)
+
+    # quit pybullet
+    p.disconnect()
+
+
+if __name__ == '__main__':
+    # test_1()
+    test_2()

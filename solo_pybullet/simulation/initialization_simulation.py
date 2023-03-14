@@ -1,9 +1,6 @@
 import numpy as np
 import pybullet_data
-import pinocchio as pin
 import pybullet as p
-
-from solo_pybullet.controller.kinematic_controller.params import init_params
 
 
 def configure_simulation(dt, fixedBase=False):
@@ -35,9 +32,6 @@ def configure_simulation(dt, fixedBase=False):
     # enable torque control for revolute joints
     joint_torques = [0.0 for m in rev_joint_idx]
     p.setJointMotorControlArray(robot_id, rev_joint_idx, controlMode=p.TORQUE_CONTROL, forces=joint_torques)
-
-    # init debugger params
-    init_params()
 
     # compute one step of simulation for init
     p.stepSimulation()
