@@ -12,7 +12,7 @@ class BulletWrapper:
     def forward_kinematics(self, Q, dQ):
         for i in range(4):
             inv_X = -1 if i == 0 or i == 2 else 1
-            inv_Y = -1 if i == 2 or i == 3 else 1
+            inv_Y = 1 if i == 2 or i == 3 else -1
 
             Q[3 * i] = Q[3 * i] * inv_X + np.pi / 2
             Q[3 * i + 1] = Q[3 * i + 1] * inv_Y + np.pi
@@ -30,7 +30,7 @@ class BulletWrapper:
         # convert model config to pybullet config
         for i in range(4):
             inv_X = -1 if i == 0 or i == 2 else 1
-            inv_Y = -1 if i == 2 or i == 3 else 1
+            inv_Y = 1 if i == 2 or i == 3 else -1
 
             Q[3 * i] = inv_X * (Q[3 * i] - np.pi / 2)
             Q[3 * i + 1] = inv_Y * (Q[3 * i + 1] - np.pi)
