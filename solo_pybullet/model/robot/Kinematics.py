@@ -39,6 +39,36 @@ class Kinematics:
 
         return P, dP
 
+    def body_inverse_kinematics(self, T):
+        # TODO generic foothold positions, compute dQ, add generic constraints
+        # compute T10 (shoulder to foot)
+        Tinv = np.linalg.inv(T)
+
+        # set foot positions in the foot frame
+        FL0 = np.array([self.L[1], -self.L[0], 0., 1])
+        FR0 = np.array([-self.L[1], -self.L[0], 0., 1])
+        HL0 = np.array([self.L[1], self.L[0], 0., 1])
+        HR0 = np.array([-self.L[1], self.L[0], 0., 1])
+
+        # get foot positions in the shoulder frame
+        FL1 = Tinv @ FL0
+        FR1 = Tinv @ FR0
+        HL1 = Tinv @ HL0
+        HR1 = Tinv @ HR0
+
+        # compute pos in each local frame
+        delta_FL = (self.r['FL'] @ FL1.T).T
+        delta_FR = (self.r['FR'] @ FR1.T).T
+        delta_HL = (self.r['HL'] @ HL1.T).T
+        delta_HR = (self.r['HR'] @ HR1.T).T
+
+        # compute configurations
+        P = np.array(np.concatenate([delta_FL[0, :3], delta_FR[0, :3], delta_HL[0, :3], delta_HR[0, :3]], axis=1)).flatten()
+        dP = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+        q, _ = self.inverse_kinematics(P, dP, np.array([0, np.pi, -np.pi, 0] * 4))
+
+        return q
+
     def inverse_kinematics(self, P, dP, constraints):
         Q = np.zeros((12,))
         dQ = np.zeros((12,))
