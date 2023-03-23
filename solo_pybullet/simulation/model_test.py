@@ -8,6 +8,7 @@ import pybullet as p
 from solo_pybullet.controller.OptimizationController import OptimizationController
 from solo_pybullet.controller.parallel_controller.ParallelController import ParallelController
 from solo_pybullet.controller.parallel_controller.Parameters import Parameters
+from solo_pybullet.controller.robot_initialization import safeconfiguration, idleconfiguration
 from solo_pybullet.simulation.initialization_simulation import configure_simulation
 from solo_pybullet.logger.Logger import Logger
 from solo_pybullet.model.foot_trajectory.CycloidFootTrajectory import CycloidFootTrajectory
@@ -177,6 +178,32 @@ def test_2():
     p.disconnect()
 
 
+def test3():
+    T = 0.5
+    dt = 0.01  # define the time step in second
+    duration = 4000 * T  # define the duration of the simulation in seconds
+    robot_id, rev_joint_idx = configure_simulation(dt, False)
+
+    for i in range(int(duration / dt)):
+        # real time simulation
+        t0 = time.perf_counter()
+        if dt * i < 3 * T:
+            safeconfiguration(robot_id, rev_joint_idx)
+        else:
+            idleconfiguration(robot_id, rev_joint_idx)
+        # next step simulation
+        p.stepSimulation()
+
+        # real time simulation
+        t_sleep = dt - (time.perf_counter() - t0)
+        if t_sleep > 0:
+            time.sleep(t_sleep * 1)
+
+    # quit pybullet
+    p.disconnect()
+
+
 if __name__ == '__main__':
     # test_1()
-    test_2()
+    # test_2()
+    test3()
