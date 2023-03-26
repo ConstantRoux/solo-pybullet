@@ -126,7 +126,7 @@ class Kinematics:
         #                   compute q3                       #
         ######################################################
         # case q1 is near zero -> singularity
-        if np.abs(q1) == 0:
+        if q1 == 0 or np.abs(q1) == np.pi:
             Z1 = pos[0] + L2
         else:
             Z1 = (pos[2] - c(q1) * (L3 + L4 + L6)) / s(q1)
@@ -142,11 +142,11 @@ class Kinematics:
         #                   compute q2                       #
         ######################################################
         # case q3 is near zero -> infinity of solutions
-        if np.abs(q3) == 0:
+        if q3 == 0:
             q2 = self.singularity_q2
 
         # case q3 is near pi
-        elif q3 == np.pi or q3 == -np.pi:
+        elif np.abs(q3) == np.pi:
             q2 = np.arctan2((pos[1] + L1)/(L5 + L7),
                             (pos[0] + np.sin(q1) * (L3 + L4 + L6) + L2)/(np.cos(q1) * (L5 + L7)))
 
