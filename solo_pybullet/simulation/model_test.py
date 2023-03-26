@@ -20,18 +20,18 @@ def test_1():
     #  INITIALIZATION ##
     ####################
     L = [0.1946, 0.0875, 0.014, 0.03745, 0.16, 0.008, 0.16]
-    constraints = np.array([0, np.pi, 0, np.pi] * 4)
+    constraints = np.array([0, np.pi, -np.pi, np.pi, -np.pi, 0] * 4)
     k = BulletWrapper(L)
 
-    T = 0.5
+    T = 1
     Lpx = 0.
-    Lpy = 0.
-    x0 = -L[1]
+    Lpy = 0.15
+    x0 = -L[1] - L[2] - L[3]
     y0 = -(L[0] + Lpy/2)
-    z0 = -0.15
+    z0 = -0.2
     H = 0.05
 
-    duration = 4000 * T  # define the duration of the simulation in seconds
+    duration = 1000 * T  # define the duration of the simulation in seconds
     dt = 0.01  # define the time step in second
     robot_id, rev_joint_idx = configure_simulation(dt, False)
 
@@ -57,45 +57,52 @@ def test_1():
         # init
         if dt * i < T:
             P = np.zeros((12,))
-            i = 0
-            P[0:3] = BezierFootTrajectory.f(dt * i + T / 2, T, np.array([x0, y0, z0]),
-                                            np.array([x0 + Lpx, y0 + Lpy, z0 + H]), dir=False)
-            P[3:6] = BezierFootTrajectory.f(dt * i, T, np.array([x0, y0, z0]), np.array([x0 + Lpx, y0 + Lpy, z0 + H]),
-                                            dir=False)
-            P[6:9] = BezierFootTrajectory.f((dt * i + T / 2), T, np.array([x0, y0, z0]),
-                                            np.array([x0 + Lpx, y0 + Lpy, z0 + H]), dir=True)
-            P[9:12] = BezierFootTrajectory.f((dt * i + T / 2) + T / 2, T, np.array([x0, y0, z0]),
-                                             np.array([x0 + Lpx, y0 + Lpy, z0 + H]), dir=True)
+
+            P[0:3] = CycloidFootTrajectory.f(T/2, T, np.array([x0, y0, z0]), np.array([x0 + Lpx, y0 + Lpy, z0 + H]), dir=True)
+            P[3:6] = CycloidFootTrajectory.f(0, T, np.array([x0, y0, z0]), np.array([x0 + Lpx, y0 + Lpy, z0 + H]), dir=True)
+            P[6:9] = CycloidFootTrajectory.f(T/2, T, np.array([x0, y0, z0]), np.array([x0 + Lpx, y0 + Lpy, z0 + H]), dir=False)
+            P[9:12] = CycloidFootTrajectory.f(0, T, np.array([x0, y0, z0]), np.array([x0 + Lpx, y0 + Lpy, z0 + H]), dir=False)
 
             dP = np.zeros((12,))
-            dP[0:3] = BezierFootTrajectory.df(dt * i + T / 2, T, np.array([x0, y0, z0]),
-                                              np.array([x0 + Lpx, y0 + Lpy, z0 + H]), dir=False)
-            dP[3:6] = BezierFootTrajectory.df(dt * i, T, np.array([x0, y0, z0]), np.array([x0 + Lpx, y0 + Lpy, z0 + H]),
-                                              dir=False)
-            dP[6:9] = BezierFootTrajectory.df((dt * i + T / 2), T, np.array([x0, y0, z0]),
-                                              np.array([x0 + Lpx, y0 + Lpy, z0 + H]), dir=True)
-            dP[9:12] = BezierFootTrajectory.df((dt * i + T / 2) + T / 2, T, np.array([x0, y0, z0]),
-                                               np.array([x0 + Lpx, y0 + Lpy, z0 + H]),
-                                               dir=True)
+            dP[0:3] = CycloidFootTrajectory.df(T/2, T, np.array([x0, y0, z0]), np.array([x0 + Lpx, y0 + Lpy, z0 + H]), dir=True)
+            dP[3:6] = CycloidFootTrajectory.df(0, T, np.array([x0, y0, z0]), np.array([x0 + Lpx, y0 + Lpy, z0 + H]), dir=True)
+            dP[6:9] = CycloidFootTrajectory.df(T/2, T, np.array([x0, y0, z0]), np.array([x0 + Lpx, y0 + Lpy, z0 + H]), dir=False)
+            dP[9:12] = CycloidFootTrajectory.df(0, T, np.array([x0, y0, z0]), np.array([x0 + Lpx, y0 + Lpy, z0 + H]), dir=False)
 
             # compute desired configuration
             q, dq = k.inverse_kinematics(P, dP, constraints)
+
+            # logger
+            if log:
+                l.data[0][1][:, i] = q
+                l.data[2][1][:, i] = dq
+                l.data[4][1][:, i] = P
+                l.data[6][1][:, i] = dP
+
+                p_Q = p.getJointStates(robot_id, rev_joint_idx)
+                sq = np.zeros((12,))
+                sdq = np.zeros((12,))
+                for j in range(12):
+                    sq[j] = p_Q[j][0]
+                    sdq[j] = p_Q[j][1]
+                l.data[1][1][:, i] = sq
+                l.data[3][1][:, i] = sdq
+                l.data[5][1][:, i], l.data[7][1][:, i] = k.forward_kinematics(sq, sdq)
 
             p.setJointMotorControlArray(robot_id, rev_joint_idx, controlMode=p.POSITION_CONTROL,
                                         targetPositions=q, targetVelocities=dq)
         else:
             P = np.zeros((12,))
-            P[0:3] = BezierFootTrajectory.f(dt * i + T / 2, T, np.array([x0, y0, z0]), np.array([x0 + Lpx, y0 + Lpy, z0 + H]), dir=False)
-            P[3:6] = BezierFootTrajectory.f(dt * i, T, np.array([x0, y0, z0]), np.array([x0 + Lpx, y0 + Lpy, z0 + H]), dir=False)
-            P[6:9] = BezierFootTrajectory.f((dt * i + T / 2), T, np.array([x0, y0, z0]), np.array([x0 + Lpx, y0 + Lpy, z0 + H]), dir=True)
-            P[9:12] = BezierFootTrajectory.f((dt * i + T / 2) + T / 2, T, np.array([x0, y0, z0]), np.array([x0 + Lpx, y0 + Lpy, z0 + H]), dir=True)
+            P[0:3] = CycloidFootTrajectory.f(dt * i + T/2, T, np.array([x0, y0, z0]), np.array([x0 + Lpx, y0 + Lpy, z0 + H]), dir=True)
+            P[3:6] = CycloidFootTrajectory.f(dt * i, T, np.array([x0, y0, z0]), np.array([x0 + Lpx, y0 + Lpy, z0 + H]), dir=True)
+            P[6:9] = CycloidFootTrajectory.f(dt * i + T/2, T, np.array([x0, y0, z0]), np.array([x0 + Lpx, y0 + Lpy, z0 + H]), dir=False)
+            P[9:12] = CycloidFootTrajectory.f(dt * i, T, np.array([x0, y0, z0]), np.array([x0 + Lpx, y0 + Lpy, z0 + H]), dir=False)
 
             dP = np.zeros((12,))
-            dP[0:3] = BezierFootTrajectory.df(dt * i + T / 2, T, np.array([x0, y0, z0]), np.array([x0 + Lpx, y0 + Lpy, z0 + H]), dir=False)
-            dP[3:6] = BezierFootTrajectory.df(dt * i, T, np.array([x0, y0, z0]), np.array([x0 + Lpx, y0 + Lpy, z0 + H]), dir=False)
-            dP[6:9] = BezierFootTrajectory.df((dt * i + T / 2), T, np.array([x0, y0, z0]), np.array([x0 + Lpx, y0 + Lpy, z0 + H]), dir=True)
-            dP[9:12] = BezierFootTrajectory.df((dt * i + T / 2) + T / 2, T, np.array([x0, y0, z0]), np.array([x0 + Lpx, y0 + Lpy, z0 + H]),
-                                             dir=True)
+            dP[0:3] = CycloidFootTrajectory.df(dt * i + T/2, T, np.array([x0, y0, z0]), np.array([x0 + Lpx, y0 + Lpy, z0 + H]), dir=True)
+            dP[3:6] = CycloidFootTrajectory.df(dt * i, T, np.array([x0, y0, z0]), np.array([x0 + Lpx, y0 + Lpy, z0 + H]), dir=True)
+            dP[6:9] = CycloidFootTrajectory.df(dt * i + T/2, T, np.array([x0, y0, z0]), np.array([x0 + Lpx, y0 + Lpy, z0 + H]), dir=False)
+            dP[9:12] = CycloidFootTrajectory.df(dt * i, T, np.array([x0, y0, z0]), np.array([x0 + Lpx, y0 + Lpy, z0 + H]), dir=False)
 
             # compute desired configuration
             q, dq = k.inverse_kinematics(P, dP, constraints)
@@ -130,10 +137,10 @@ def test_1():
 
     # logger
     if log:
-        l.plot_channel([0, 1], 0, -1, 3, 4)
-        l.plot_channel([2, 3], 0, -1, 3, 4)
-        l.plot_channel([4, 5], 0, -1, 3, 4)
-        l.plot_channel([6, 7], 0, -1, 3, 4)
+        l.plot_channel([0, 1], int(T/dt), -1, 3, 4)
+        l.plot_channel([2, 3], int(T/dt), -1, 3, 4)
+        l.plot_channel([4, 5], int(T/dt), -1, 3, 4)
+        l.plot_channel([6, 7], int(T/dt), -1, 3, 4)
 
     # quit pybullet
     p.disconnect()
@@ -144,7 +151,6 @@ def test_2():
     #  INITIALIZATION ##
     ####################
     L = [0.1946, 0.0875, 0.014, 0.03745, 0.16, 0.008, 0.16]
-    constraints = np.array([0, np.pi, 0, np.pi] * 4)
     k = BulletWrapper(L)
 
     duration = 3600  # define the duration of the simulation in seconds
@@ -160,7 +166,7 @@ def test_2():
         t0 = time.perf_counter()
 
         # compute desired configuration
-        q, _ = ParallelController.controller(k, *Parameters.get_params())
+        q = ParallelController.controller(k, *Parameters.get_params())
 
         p.setJointMotorControlArray(robot_id, rev_joint_idx, controlMode=p.POSITION_CONTROL,
                                     targetPositions=q)

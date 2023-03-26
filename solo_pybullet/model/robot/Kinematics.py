@@ -2,6 +2,7 @@ import numpy as np
 from numpy import cos as c
 from numpy import sin as s
 
+from solo_pybullet.exception.NoSolutionException import NoSolutionException
 from solo_pybullet.model.foot_trajectory.BezierFootTrajectory import BezierFootTrajectory
 
 
@@ -29,6 +30,8 @@ class Kinematics:
                                    [0, 0, 1, 0],
                                    [0, 0, 0, 1]])}
 
+        self.singularity_q2 = 0
+
     def forward_kinematics(self, Q, dQ):
         P = np.zeros(12, )
         dP = np.zeros(12, )
@@ -39,16 +42,25 @@ class Kinematics:
 
         return P, dP
 
-    def body_inverse_kinematics(self, T):
+    def inverse_kinematics(self, P, dP, constraints):
+        Q = np.zeros((12,))
+        dQ = np.zeros((12,))
+
+        for i in range(4):
+            Q[3 * i: 3 * (i + 1)] = self.__inverse_kinematics(P[3 * i: 3 * (i + 1)], constraints[6 * i: 6 * (i + 1)])
+            dQ[3 * i: 3 * (i + 1)] = np.linalg.pinv(self.__linearJacobian(Q[3 * i: 3 * (i + 1)])) @ dP[3 * i: 3 * (i + 1)]
+        return Q, dQ
+
+    def body_inverse_kinematics(self, T, constraints):
         # TODO generic foothold positions, compute dQ, add generic constraints
         # compute T10 (shoulder to foot)
         Tinv = np.linalg.inv(T)
 
         # set foot positions in the foot frame
-        FL0 = np.array([self.L[1], -self.L[0], 0., 1])
-        FR0 = np.array([-self.L[1], -self.L[0], 0., 1])
-        HL0 = np.array([self.L[1], self.L[0], 0., 1])
-        HR0 = np.array([-self.L[1], self.L[0], 0., 1])
+        FL0 = np.array([self.L[1] + self.L[2] + self.L[3] + self.L[5], -self.L[0], 0., 1])
+        FR0 = np.array([-self.L[1] - self.L[2] - self.L[3] - self.L[5], -self.L[0], 0., 1])
+        HL0 = np.array([self.L[1] + self.L[2] + self.L[3] + self.L[5], self.L[0], 0., 1])
+        HR0 = np.array([-self.L[1] - self.L[2] - self.L[3] - self.L[5], self.L[0], 0., 1])
 
         # get foot positions in the shoulder frame
         FL1 = Tinv @ FL0
@@ -65,18 +77,9 @@ class Kinematics:
         # compute configurations
         P = np.array(np.concatenate([delta_FL[0, :3], delta_FR[0, :3], delta_HL[0, :3], delta_HR[0, :3]], axis=1)).flatten()
         dP = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-        q, _ = self.inverse_kinematics(P, dP, np.array([0, np.pi, -np.pi, 0] * 4))
+        q, _ = self.inverse_kinematics(P, dP, constraints)
 
         return q
-
-    def inverse_kinematics(self, P, dP, constraints):
-        Q = np.zeros((12,))
-        dQ = np.zeros((12,))
-
-        for i in range(4):
-            Q[3 * i: 3 * (i + 1)] = self.__inverse_kinematics(P[3 * i: 3 * (i + 1)], constraints[4 * i: 4 * (i + 1)])
-            dQ[3 * i: 3 * (i + 1)] = np.linalg.pinv(self.__linearJacobian(Q[3 * i: 3 * (i + 1)])) @ dP[3 * i: 3 * (i + 1)]
-        return Q, dQ
 
     def linearJacobian(self, Q):
         J = np.zeros((3, 12))
@@ -103,11 +106,11 @@ class Kinematics:
 
     def __inverse_kinematics(self, pos, constraints):
         # TODO check if robot is able to reach the desired position
-        # TODO optimize calculus
-        # TODO constraint q2 joint + exception if no solution has been found
         L1, L2, L3, L4, L5, L6, L7 = self.L
 
-        # compute q1
+        ######################################################
+        #                   compute q1                       #
+        ######################################################
         X = pos[2]
         Y = -pos[0] - L2
         Z = L3 + L4 + L6
@@ -116,22 +119,49 @@ class Kinematics:
         if q1 < constraints[0] or q1 > constraints[1]:
             q1 = np.arctan2((Y * Z + X * np.sqrt(X * X + Y * Y - Z * Z)) / (X * X + Y * Y),
                             (X * Z - Y * np.sqrt(X * X + Y * Y - Z * Z)) / (X * X + Y * Y))
+            if q1 < constraints[0] or q1 > constraints[1]:
+                raise NoSolutionException(pos, constraints)
 
-        # compute q3
-        Z1 = (pos[2] - np.cos(q1) * (L3 + L4 + L6)) / np.sin(q1)
+        ######################################################
+        #                   compute q3                       #
+        ######################################################
+        # case q1 is near zero -> singularity
+        if np.abs(q1) == 0:
+            Z1 = pos[0] + L2
+        else:
+            Z1 = (pos[2] - c(q1) * (L3 + L4 + L6)) / s(q1)
         Z2 = pos[1] + L1
         c3 = (Z1 * Z1 + Z2 * Z2 - L5 * L5 - L7 * L7) / (-2 * L5 * L7)
         q3 = np.arctan2(np.sqrt(1 - c3 * c3), c3)
-        if q3 < constraints[2] or q3 > constraints[3]:
+        if q3 < constraints[4] or q3 > constraints[5]:
             q3 = np.arctan2(-np.sqrt(1 - c3 * c3), c3)
+            if q3 < constraints[4] or q3 > constraints[5]:
+                raise NoSolutionException(pos, constraints)
 
-        # compute q2
-        B1 = L5 - L7 * np.cos(q3)
-        B2 = -L7 * np.sin(q3)
-        q2_1 = np.arctan2((B1 * Z2 - B2 * Z1) / (B1 * B1 + B2 * B2),
-                          (B1 * Z1 + B2 * Z2) / (B1 * B1 + B2 * B2))
+        ######################################################
+        #                   compute q2                       #
+        ######################################################
+        # case q3 is near zero -> infinity of solutions
+        if np.abs(q3) == 0:
+            q2 = self.singularity_q2
 
-        return np.array([q1, q2_1, q3])
+        # case q3 is near pi
+        elif q3 == np.pi or q3 == -np.pi:
+            q2 = np.arctan2((pos[1] + L1)/(L5 + L7),
+                            (pos[0] + np.sin(q1) * (L3 + L4 + L6) + L2)/(np.cos(q1) * (L5 + L7)))
+
+        # other cases
+        else:
+            B1 = L5 - L7 * np.cos(q3)
+            B2 = -L7 * np.sin(q3)
+            q2 = np.arctan2((B1 * Z2 - B2 * Z1) / (B1 * B1 + B2 * B2),
+                              (B1 * Z1 + B2 * Z2) / (B1 * B1 + B2 * B2))
+
+        if q2 < constraints[2] or q2 > constraints[3]:
+            raise NoSolutionException(pos, constraints)
+
+        self.singularity_q2 = q2
+        return np.array([q1, q2, q3])
 
     def __linearJacobian(self, Q):
         q1, q2, q3 = Q

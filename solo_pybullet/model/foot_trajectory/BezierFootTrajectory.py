@@ -127,9 +127,9 @@ if __name__ == '__main__':
     d2res = np.zeros((3, n_size))
 
     for i, t0 in enumerate(t):
-        res[:, i] = BezierFootTrajectory.f(t0, T, np.array([0, 0, -0.3]), np.array([0 + Lx, 0 + Ly, -0.3 + H]), dir=False)
-        dres[:, i] = BezierFootTrajectory.df(t0, T, np.array([0, 0, -0.3]), np.array([0 + Lx, 0 + Ly, -0.3 + H]), dir=False)
-        d2res[:, i] = BezierFootTrajectory.d2f(t0, T, np.array([0, 0, -0.3]), np.array([0 + Lx, 0 + Ly, -0.3 + H]), dir=False)
+        res[:, i] = BezierFootTrajectory.f(t0, T, np.array([0, 0, -0.3]), np.array([0 + Lx, 0 + Ly, -0.3 + H]), dir=True)
+        dres[:, i] = BezierFootTrajectory.df(t0, T, np.array([0, 0, -0.3]), np.array([0 + Lx, 0 + Ly, -0.3 + H]), dir=True)
+        d2res[:, i] = BezierFootTrajectory.d2f(t0, T, np.array([0, 0, -0.3]), np.array([0 + Lx, 0 + Ly, -0.3 + H]), dir=True)
 
     f, axs = plt.subplots(3, 3)
     axs[0, 0].plot(t, res[0, :])

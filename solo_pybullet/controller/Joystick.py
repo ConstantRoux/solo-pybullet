@@ -39,7 +39,7 @@ if __name__ == '__main__':
     while True:
         joy1, joy2 = Joystick.get_value()
 
-        # check error
+        # check exception
         if joy1 == (-999, -999):
             break
             
