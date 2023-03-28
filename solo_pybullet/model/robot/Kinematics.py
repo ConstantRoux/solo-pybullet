@@ -3,6 +3,7 @@ from numpy import cos as c
 from numpy import sin as s
 
 from solo_pybullet.exception.NoSolutionException import NoSolutionException
+from solo_pybullet.exception.NotReachableException import NotReachableException
 from solo_pybullet.model.foot_trajectory.BezierFootTrajectory import BezierFootTrajectory
 
 
@@ -30,7 +31,7 @@ class Kinematics:
                                    [0, 0, 1, 0],
                                    [0, 0, 0, 1]])}
 
-        self.singularity_q2 = 0
+        self.current_Q = np.zeros((12,))
 
     def forward_kinematics(self, Q, dQ):
         P = np.zeros(12, )
@@ -46,9 +47,16 @@ class Kinematics:
         Q = np.zeros((12,))
         dQ = np.zeros((12,))
 
-        for i in range(4):
-            Q[3 * i: 3 * (i + 1)] = self.__inverse_kinematics(P[3 * i: 3 * (i + 1)], constraints[6 * i: 6 * (i + 1)])
-            dQ[3 * i: 3 * (i + 1)] = np.linalg.pinv(self.__linearJacobian(Q[3 * i: 3 * (i + 1)])) @ dP[3 * i: 3 * (i + 1)]
+        try:
+            for i in range(4):
+                Q[3 * i: 3 * (i + 1)] = self.__inverse_kinematics(P[3 * i: 3 * (i + 1)], constraints[6 * i: 6 * (i + 1)], i)
+                dQ[3 * i: 3 * (i + 1)] = np.linalg.pinv(self.__linearJacobian(Q[3 * i: 3 * (i + 1)])) @ dP[3 * i: 3 * (i + 1)]
+        except (NoSolutionException, NotReachableException) as err:
+            print(err)
+            Q = np.copy(self.current_Q)
+        else:
+            self.current_Q = np.copy(Q)
+
         return Q, dQ
 
     def body_inverse_kinematics(self, T, constraints):
@@ -104,8 +112,7 @@ class Kinematics:
 
         return T04[0:3, 3].flatten()
 
-    def __inverse_kinematics(self, pos, constraints):
-        # TODO check if robot is able to reach the desired position
+    def __inverse_kinematics(self, pos, constraints, leg_idx):
         L1, L2, L3, L4, L5, L6, L7 = self.L
 
         ######################################################
@@ -114,11 +121,15 @@ class Kinematics:
         X = pos[2]
         Y = -pos[0] - L2
         Z = L3 + L4 + L6
-        q1 = np.arctan2((Y * Z - X * np.sqrt(X * X + Y * Y - Z * Z)) / (X * X + Y * Y),
-                        (X * Z + Y * np.sqrt(X * X + Y * Y - Z * Z)) / (X * X + Y * Y))
+
+        sqrt_tmp = np.sqrt(X * X + Y * Y - Z * Z)
+        if np.isnan(sqrt_tmp):
+            raise NotReachableException(pos)
+        q1 = np.arctan2((Y * Z - X * sqrt_tmp) / (X * X + Y * Y),
+                        (X * Z + Y * sqrt_tmp) / (X * X + Y * Y))
         if q1 < constraints[0] or q1 > constraints[1]:
-            q1 = np.arctan2((Y * Z + X * np.sqrt(X * X + Y * Y - Z * Z)) / (X * X + Y * Y),
-                            (X * Z - Y * np.sqrt(X * X + Y * Y - Z * Z)) / (X * X + Y * Y))
+            q1 = np.arctan2((Y * Z + X * sqrt_tmp) / (X * X + Y * Y),
+                            (X * Z - Y * sqrt_tmp) / (X * X + Y * Y))
             if q1 < constraints[0] or q1 > constraints[1]:
                 raise NoSolutionException(pos, constraints)
 
@@ -132,9 +143,12 @@ class Kinematics:
             Z1 = (pos[2] - c(q1) * (L3 + L4 + L6)) / s(q1)
         Z2 = pos[1] + L1
         c3 = (Z1 * Z1 + Z2 * Z2 - L5 * L5 - L7 * L7) / (-2 * L5 * L7)
-        q3 = np.arctan2(np.sqrt(1 - c3 * c3), c3)
+        sqrt_tmp = np.sqrt(1 - c3 * c3)
+        if np.isnan(sqrt_tmp):
+            raise NotReachableException(pos)
+        q3 = np.arctan2(sqrt_tmp, c3)
         if q3 < constraints[4] or q3 > constraints[5]:
-            q3 = np.arctan2(-np.sqrt(1 - c3 * c3), c3)
+            q3 = np.arctan2(-sqrt_tmp, c3)
             if q3 < constraints[4] or q3 > constraints[5]:
                 raise NoSolutionException(pos, constraints)
 
@@ -143,7 +157,7 @@ class Kinematics:
         ######################################################
         # case q3 is near zero -> infinity of solutions
         if q3 == 0:
-            q2 = self.singularity_q2
+            q2 = self.current_Q[3 * leg_idx + 1]
 
         # case q3 is near pi
         elif np.abs(q3) == np.pi:
@@ -160,7 +174,6 @@ class Kinematics:
         if q2 < constraints[2] or q2 > constraints[3]:
             raise NoSolutionException(pos, constraints)
 
-        self.singularity_q2 = q2
         return np.array([q1, q2, q3])
 
     def __linearJacobian(self, Q):

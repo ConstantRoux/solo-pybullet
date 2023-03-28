@@ -155,7 +155,7 @@ def test_2():
 
     duration = 3600  # define the duration of the simulation in seconds
     dt = 0.01  # define the time step in second
-    robot_id, rev_joint_idx = configure_simulation(dt, False)
+    robot_id, rev_joint_idx = configure_simulation(dt, True)
     Parameters.init_params()
 
     ###############
