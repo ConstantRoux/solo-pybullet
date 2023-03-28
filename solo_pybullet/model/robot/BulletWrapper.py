@@ -24,9 +24,9 @@ class BulletWrapper:
 
         return self.kinematics.forward_kinematics(Q, dQ)
 
-    def body_inverse_kinematics(self, T):
-        # TODO compute dQ, check constraints on each joint
-        Q = self.kinematics.body_inverse_kinematics(T)
+    def body_inverse_kinematics(self, T, constraints):
+        # TODO compute dQ
+        Q = self.kinematics.body_inverse_kinematics(T, constraints)
 
         # convert model config to pybullet config
         for i in range(4):

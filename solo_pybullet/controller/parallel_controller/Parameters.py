@@ -7,10 +7,10 @@ class Parameters:
         global T, xF0, yF0, z0, dx, dz
         p.addUserDebugParameter("  tx  ", -0.1, 0.1, 0)
         p.addUserDebugParameter("  ty  ", -0.1, 0.1, 0)
-        p.addUserDebugParameter("  tz  ", -0.3, -0.05, -0.2)
-        p.addUserDebugParameter("  rx  ", -0.5, 0.5, 0)
-        p.addUserDebugParameter("  ry  ", -0.5, 0.5, 0)
-        p.addUserDebugParameter("  rz  ", -0.5, 0.5, 0)
+        p.addUserDebugParameter("  tz  ", 0., 0.32, 0.2)
+        p.addUserDebugParameter("  rx  ", -1, 1, 0)
+        p.addUserDebugParameter("  ry  ", -1, 1, 0)
+        p.addUserDebugParameter("  rz  ", -0.8, 0.8, 0)
 
     @staticmethod
     def get_params():

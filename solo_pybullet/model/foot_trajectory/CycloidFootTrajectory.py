@@ -73,10 +73,7 @@ class CycloidFootTrajectory:
             dy = 0
             dz = 0
 
-        if dir:
-            return np.array([-dx, -dy, -dz])
-        else:
-            return np.array([dx, dy, dz])
+        return np.array([dx, dy, dz])
 
 
 if __name__ == '__main__':

@@ -103,7 +103,7 @@ def c_walking_IK(q, qdot, dt, solo, t_simu):
     # print('xyzdes_HL ' + str(xyzdes_HL))
     # print('xyzdes_HR ' + str(xyzdes_HR))
 
-    # Calculating the error
+    # Calculating the exception
     err_FL = xyz_FL - np.asarray(xyzdes_FL).reshape(-1)
     err_FR = xyz_FR - np.asarray(xyzdes_FR).reshape(-1)
     err_HL = xyz_HL - np.asarray(xyzdes_HL).reshape(-1)
@@ -136,7 +136,7 @@ def c_walking_IK(q, qdot, dt, solo, t_simu):
     oJ_HR3 = oR_HR @ fJ_HR3
     oJ_HRxyz = oJ_HR3[:, -12:]
 
-    # Displacement error
+    # Displacement exception
     nu = np.reshape([err_FL, err_FR, err_HL, err_HR], (12, 1))
 
     # Making a single x&z-rows Jacobian vector
