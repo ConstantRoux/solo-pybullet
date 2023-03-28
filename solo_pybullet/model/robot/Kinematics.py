@@ -31,7 +31,11 @@ class Kinematics:
                                    [0, 0, 1, 0],
                                    [0, 0, 0, 1]])}
 
+        # current config of the robot
         self.current_Q = np.zeros((12,))
+
+        # debug parameter to display information and error messages
+        self.debug = False
 
     def forward_kinematics(self, Q, dQ):
         P = np.zeros(12, )
@@ -52,7 +56,8 @@ class Kinematics:
                 Q[3 * i: 3 * (i + 1)] = self.__inverse_kinematics(P[3 * i: 3 * (i + 1)], constraints[6 * i: 6 * (i + 1)], i)
                 dQ[3 * i: 3 * (i + 1)] = np.linalg.pinv(self.__linearJacobian(Q[3 * i: 3 * (i + 1)])) @ dP[3 * i: 3 * (i + 1)]
         except (NoSolutionException, NotReachableException) as err:
-            print(err)
+            if self.debug:
+                print(err)
             Q = np.copy(self.current_Q)
         else:
             self.current_Q = np.copy(Q)
