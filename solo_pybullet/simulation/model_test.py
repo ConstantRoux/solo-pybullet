@@ -4,11 +4,12 @@
 import time
 import numpy as np
 import pybullet as p
+import matplotlib.pyplot as plt
 
 from solo_pybullet.controller.OptimizationController import OptimizationController
 from solo_pybullet.controller.parallel_controller.ParallelController import ParallelController
 from solo_pybullet.controller.parallel_controller.Parameters import Parameters
-from solo_pybullet.controller.robot_initialization import safeconfiguration, idleconfiguration
+from solo_pybullet.controller.robot_initialization import idle_configuration, safe_configuration
 from solo_pybullet.simulation.initialization_simulation import configure_simulation
 from solo_pybullet.logger.Logger import Logger
 from solo_pybullet.model.foot_trajectory.CycloidFootTrajectory import CycloidFootTrajectory
@@ -28,7 +29,7 @@ def test_1():
     Lpx = 0.
     Lpy = 0.15
     x0 = -L[1] - L[2] - L[3]
-    y0 = -(L[0] + Lpy/2)
+    y0 = -(L[0] + Lpy / 2)
     z0 = -0.2
     H = 0.05
 
@@ -59,16 +60,24 @@ def test_1():
         if dt * i < T:
             P = np.zeros((12,))
 
-            P[0:3] = CycloidFootTrajectory.f(T/2, T, np.array([x0, y0, z0]), np.array([x0 + Lpx, y0 + Lpy, z0 + H]), dir=True)
-            P[3:6] = CycloidFootTrajectory.f(0, T, np.array([x0, y0, z0]), np.array([x0 + Lpx, y0 + Lpy, z0 + H]), dir=True)
-            P[6:9] = CycloidFootTrajectory.f(T/2, T, np.array([x0, y0, z0]), np.array([x0 + Lpx, y0 + Lpy, z0 + H]), dir=False)
-            P[9:12] = CycloidFootTrajectory.f(0, T, np.array([x0, y0, z0]), np.array([x0 + Lpx, y0 + Lpy, z0 + H]), dir=False)
+            P[0:3] = CycloidFootTrajectory.f(T / 2, T, np.array([x0, y0, z0]), np.array([x0 + Lpx, y0 + Lpy, z0 + H]),
+                                             dir=True)
+            P[3:6] = CycloidFootTrajectory.f(0, T, np.array([x0, y0, z0]), np.array([x0 + Lpx, y0 + Lpy, z0 + H]),
+                                             dir=True)
+            P[6:9] = CycloidFootTrajectory.f(T / 2, T, np.array([x0, y0, z0]), np.array([x0 + Lpx, y0 + Lpy, z0 + H]),
+                                             dir=False)
+            P[9:12] = CycloidFootTrajectory.f(0, T, np.array([x0, y0, z0]), np.array([x0 + Lpx, y0 + Lpy, z0 + H]),
+                                              dir=False)
 
             dP = np.zeros((12,))
-            dP[0:3] = CycloidFootTrajectory.df(T/2, T, np.array([x0, y0, z0]), np.array([x0 + Lpx, y0 + Lpy, z0 + H]), dir=True)
-            dP[3:6] = CycloidFootTrajectory.df(0, T, np.array([x0, y0, z0]), np.array([x0 + Lpx, y0 + Lpy, z0 + H]), dir=True)
-            dP[6:9] = CycloidFootTrajectory.df(T/2, T, np.array([x0, y0, z0]), np.array([x0 + Lpx, y0 + Lpy, z0 + H]), dir=False)
-            dP[9:12] = CycloidFootTrajectory.df(0, T, np.array([x0, y0, z0]), np.array([x0 + Lpx, y0 + Lpy, z0 + H]), dir=False)
+            dP[0:3] = CycloidFootTrajectory.df(T / 2, T, np.array([x0, y0, z0]), np.array([x0 + Lpx, y0 + Lpy, z0 + H]),
+                                               dir=True)
+            dP[3:6] = CycloidFootTrajectory.df(0, T, np.array([x0, y0, z0]), np.array([x0 + Lpx, y0 + Lpy, z0 + H]),
+                                               dir=True)
+            dP[6:9] = CycloidFootTrajectory.df(T / 2, T, np.array([x0, y0, z0]), np.array([x0 + Lpx, y0 + Lpy, z0 + H]),
+                                               dir=False)
+            dP[9:12] = CycloidFootTrajectory.df(0, T, np.array([x0, y0, z0]), np.array([x0 + Lpx, y0 + Lpy, z0 + H]),
+                                                dir=False)
 
             # compute desired configuration
             q, dq = k.inverse_kinematics(P, dP, constraints)
@@ -94,16 +103,24 @@ def test_1():
                                         targetPositions=q, targetVelocities=dq)
         else:
             P = np.zeros((12,))
-            P[0:3] = CycloidFootTrajectory.f(dt * i + T/2, T, np.array([x0, y0, z0]), np.array([x0 + Lpx, y0 + Lpy, z0 + H]), dir=True)
-            P[3:6] = CycloidFootTrajectory.f(dt * i, T, np.array([x0, y0, z0]), np.array([x0 + Lpx, y0 + Lpy, z0 + H]), dir=True)
-            P[6:9] = CycloidFootTrajectory.f(dt * i + T/2, T, np.array([x0, y0, z0]), np.array([x0 + Lpx, y0 + Lpy, z0 + H]), dir=False)
-            P[9:12] = CycloidFootTrajectory.f(dt * i, T, np.array([x0, y0, z0]), np.array([x0 + Lpx, y0 + Lpy, z0 + H]), dir=False)
+            P[0:3] = CycloidFootTrajectory.f(dt * i + T / 2, T, np.array([x0, y0, z0]),
+                                             np.array([x0 + Lpx, y0 + Lpy, z0 + H]), dir=True)
+            P[3:6] = CycloidFootTrajectory.f(dt * i, T, np.array([x0, y0, z0]), np.array([x0 + Lpx, y0 + Lpy, z0 + H]),
+                                             dir=True)
+            P[6:9] = CycloidFootTrajectory.f(dt * i + T / 2, T, np.array([x0, y0, z0]),
+                                             np.array([x0 + Lpx, y0 + Lpy, z0 + H]), dir=False)
+            P[9:12] = CycloidFootTrajectory.f(dt * i, T, np.array([x0, y0, z0]), np.array([x0 + Lpx, y0 + Lpy, z0 + H]),
+                                              dir=False)
 
             dP = np.zeros((12,))
-            dP[0:3] = CycloidFootTrajectory.df(dt * i + T/2, T, np.array([x0, y0, z0]), np.array([x0 + Lpx, y0 + Lpy, z0 + H]), dir=True)
-            dP[3:6] = CycloidFootTrajectory.df(dt * i, T, np.array([x0, y0, z0]), np.array([x0 + Lpx, y0 + Lpy, z0 + H]), dir=True)
-            dP[6:9] = CycloidFootTrajectory.df(dt * i + T/2, T, np.array([x0, y0, z0]), np.array([x0 + Lpx, y0 + Lpy, z0 + H]), dir=False)
-            dP[9:12] = CycloidFootTrajectory.df(dt * i, T, np.array([x0, y0, z0]), np.array([x0 + Lpx, y0 + Lpy, z0 + H]), dir=False)
+            dP[0:3] = CycloidFootTrajectory.df(dt * i + T / 2, T, np.array([x0, y0, z0]),
+                                               np.array([x0 + Lpx, y0 + Lpy, z0 + H]), dir=True)
+            dP[3:6] = CycloidFootTrajectory.df(dt * i, T, np.array([x0, y0, z0]),
+                                               np.array([x0 + Lpx, y0 + Lpy, z0 + H]), dir=True)
+            dP[6:9] = CycloidFootTrajectory.df(dt * i + T / 2, T, np.array([x0, y0, z0]),
+                                               np.array([x0 + Lpx, y0 + Lpy, z0 + H]), dir=False)
+            dP[9:12] = CycloidFootTrajectory.df(dt * i, T, np.array([x0, y0, z0]),
+                                                np.array([x0 + Lpx, y0 + Lpy, z0 + H]), dir=False)
 
             # compute desired configuration
             q, dq = k.inverse_kinematics(P, dP, constraints)
@@ -138,10 +155,10 @@ def test_1():
 
     # logger
     if log:
-        l.plot_channel([0, 1], int(T/dt), -1, 3, 4)
-        l.plot_channel([2, 3], int(T/dt), -1, 3, 4)
-        l.plot_channel([4, 5], int(T/dt), -1, 3, 4)
-        l.plot_channel([6, 7], int(T/dt), -1, 3, 4)
+        l.plot_channel([0, 1], int(T / dt), -1, 3, 4)
+        l.plot_channel([2, 3], int(T / dt), -1, 3, 4)
+        l.plot_channel([4, 5], int(T / dt), -1, 3, 4)
+        l.plot_channel([6, 7], int(T / dt), -1, 3, 4)
 
     # quit pybullet
     p.disconnect()
@@ -185,18 +202,96 @@ def test_2():
 
 
 def test3():
+    """
+    Test initialization function
+    :return:
+    """
+    L = [0.1946, 0.0875, 0.014, 0.03745, 0.16, 0.008, 0.16]
     T = 0.5
     dt = 0.01  # define the time step in second
-    duration = 4000 * T  # define the duration of the simulation in seconds
-    robot_id, rev_joint_idx = configure_simulation(dt, False)
+    duration = 16 * T  # define the duration of the simulation in seconds
+    robot_id, rev_joint_idx = configure_simulation(dt, True)
+    k = BulletWrapper(L)
+    k.kinematics.debug = True
+    flag1 = False
+    flag2 = False
+    flag3 = True
+    testQ3 = []
+    targetposQ3 = []
+
+    # print(p.getJointInfo(robot_id, 2))
 
     for i in range(int(duration / dt)):
         # real time simulation
         t0 = time.perf_counter()
-        if dt * i < 3 * T:
-            safeconfiguration(robot_id, rev_joint_idx)
+
+        if not flag1:
+            flag1, q = safe_configuration(k, i * dt, 3)
+            targetposQ3.append(q[2])  # keep the value to plot them (q3)
+
+        # elif flag3:  # wait for input to go in idle configuration
+        #     x = input('Press the X key:')
+        #     if x is 'x':
+        #         flag3 = False
+
+        elif not flag2:
+            flag2, q = idle_configuration(k, i * dt, 3, h=0.24)
+            targetposQ3.append(q[2])  # keep the value to plot them (q3)
+
         else:
-            idleconfiguration(robot_id, rev_joint_idx)
+            pass
+
+        testQ3.append(np.array(p.getJointStates(robot_id, rev_joint_idx))[2, 0])
+
+        # print(q)
+        p.setJointMotorControlArray(robot_id, rev_joint_idx, controlMode=p.POSITION_CONTROL,
+                                    targetPositions=q)  # targetVelocities=dq
+
+        # next step simulation
+        p.stepSimulation()
+
+        # real time simulation
+        t_sleep = dt - (time.perf_counter() - t0)
+        if t_sleep > 0:
+            time.sleep(t_sleep * 1)
+
+    plt.plot(testQ3)
+    plt.plot(targetposQ3)
+    plt.show()
+
+    # quit pybullet
+    p.disconnect()
+
+
+def test4():
+    """
+    Test link movement
+    :return:
+    """
+
+    L = [0.1946, 0.0875, 0.014, 0.03745, 0.16, 0.008, 0.16]
+    T = 0.5
+    dt = 0.01  # define the time step in second
+    duration = 4000 * T  # define the duration of the simulation in seconds
+    robot_id, rev_joint_idx = configure_simulation(dt, True)
+    k = BulletWrapper(L)
+    k.kinematics.debug = True
+
+    Q = np.zeros((12,))
+
+    for i in range(int(duration / dt)):
+        # real time simulation
+        t0 = time.perf_counter()
+
+        # Q[2] = np.sin(i * dt)
+
+        # print(q)
+        p.setJointMotorControlArray(robot_id, rev_joint_idx, controlMode=p.POSITION_CONTROL,
+                                    targetPositions=Q)  # targetVelocities=dq
+        Q[2] += 0.01
+
+        print(Q[2])
+
         # next step simulation
         p.stepSimulation()
 
@@ -211,5 +306,6 @@ def test3():
 
 if __name__ == '__main__':
     # test_1()
-    test_2()
-    # test3()
+    # test_2()
+    test3()
+    # test4()

@@ -9,19 +9,24 @@ def Th(R, P):
     return np.column_stack([R, P])
 
 
-def Rx(t):
+def Rx(rx):
     return np.matrix([[1, 0, 0],
-                      [0, c(t), -s(t)],
-                      [0, s(t), c(t)]])
+                      [0, c(rx), -s(rx)],
+                      [0, s(rx), c(rx)]])
 
 
-def Ry(t):
-    return np.matrix([[c(t), 0, s(t)],
+def Ry(ry):
+    return np.matrix([[c(ry), 0, s(ry)],
                       [0, 1, 0],
-                      [-s(t), 0, c(t)]])
+                      [-s(ry), 0, c(ry)]])
 
 
-def Rz(t):
-    return np.matrix([[c(t), -s(t), 0],
-                      [s(t), c(t), 0],
+def Rz(rz):
+    return np.matrix([[c(rz), -s(rz), 0],
+                      [s(rz), c(rz), 0],
                       [0, 0, 1]])
+
+
+def R(rx, ry, rz):
+    return Rx(rx) @ Ry(ry) @ Rz(rz)
+

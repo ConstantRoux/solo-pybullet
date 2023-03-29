@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
-
+from math import remainder, tau
 from solo_pybullet.model.robot.Kinematics import Kinematics
 
 
@@ -36,6 +36,13 @@ class BulletWrapper:
             Q[3 * i] = inv_X * (Q[3 * i] - np.pi / 2)
             Q[3 * i + 1] = inv_Y * (Q[3 * i + 1] - np.pi)
             Q[3 * i + 2] = inv_Y * (Q[3 * i + 2] - np.pi)
+
+        # Q = np.mod(Q + 2 * np.pi, 2 * np.pi)
+        #
+        # Q = np.mod(Q, np.pi) - np.pi * (Q // np.pi)
+
+        ieee_remainder = np.vectorize(remainder)
+        # print(ieee_remainder(Q, 20))
 
         return Q
 

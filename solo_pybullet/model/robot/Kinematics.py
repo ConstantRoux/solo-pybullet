@@ -32,7 +32,8 @@ class Kinematics:
                                    [0, 0, 0, 1]])}
 
         # current config of the robot
-        self.current_Q = np.zeros((12,))
+        self.current_Q = np.array([np.pi/2, np.pi, np.pi] * 4)
+
 
         # debug parameter to display information and error messages
         self.debug = False
