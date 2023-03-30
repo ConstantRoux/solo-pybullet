@@ -8,6 +8,7 @@ class BulletWrapper:
     def __init__(self, L):
         self.L = L
         self.kinematics = Kinematics(L)
+        self.rev_counter = np.zeros((12,))
 
     def forward_kinematics(self, Q, dQ):
         for i in range(4):
@@ -25,10 +26,13 @@ class BulletWrapper:
         return self.kinematics.forward_kinematics(Q, dQ)
 
     def body_inverse_kinematics(self, T, constraints):
-        # TODO compute dQ
+        prev_Q = self.kinematics.current_Q
         Q = self.kinematics.body_inverse_kinematics(T, constraints)
 
         # convert model config to pybullet config
+        self.rev_counter[(prev_Q - Q) >= np.pi] += 1
+        self.rev_counter[(prev_Q - Q) <= -np.pi] -= 1
+        Q += 2 * np.pi * self.rev_counter
         for i in range(4):
             inv_X = -1 if i == 0 or i == 2 else 1
             inv_Y = 1 if i == 2 or i == 3 else -1
@@ -37,19 +41,16 @@ class BulletWrapper:
             Q[3 * i + 1] = inv_Y * (Q[3 * i + 1] - np.pi)
             Q[3 * i + 2] = inv_Y * (Q[3 * i + 2] - np.pi)
 
-        # Q = np.mod(Q + 2 * np.pi, 2 * np.pi)
-        #
-        # Q = np.mod(Q, np.pi) - np.pi * (Q // np.pi)
-
-        ieee_remainder = np.vectorize(remainder)
-        # print(ieee_remainder(Q, 20))
-
         return Q
 
     def inverse_kinematics(self, P, dP, constraints):
+        prev_Q = self.kinematics.current_Q
         Q, dQ = self.kinematics.inverse_kinematics(P, dP, constraints)
 
         # convert model config to pybullet config
+        self.rev_counter[(prev_Q - Q) >= np.pi] += 1
+        self.rev_counter[(prev_Q - Q) <= -np.pi] -= 1
+        Q += 2 * np.pi * self.rev_counter
         for i in range(4):
             inv_X = -1 if i == 0 or i == 2 else 1
             inv_Y = 1 if i == 2 or i == 3 else -1

@@ -173,7 +173,7 @@ def test_2():
 
     duration = 3600  # define the duration of the simulation in seconds
     dt = 0.01  # define the time step in second
-    robot_id, rev_joint_idx = configure_simulation(dt, False)
+    robot_id, rev_joint_idx = configure_simulation(dt, True)
     Parameters.init_params()
 
     ###############
@@ -211,11 +211,20 @@ def test3():
     dt = 0.01  # define the time step in second
     duration = 16 * T  # define the duration of the simulation in seconds
     robot_id, rev_joint_idx = configure_simulation(dt, True)
+
     k = BulletWrapper(L)
     k.kinematics.debug = True
-    flag1 = False
-    flag2 = False
-    flag3 = True
+
+    safe_mode_period = 3
+    safe_mode_flag = False
+
+    wait_input_flag = True
+
+    idle_mode_period = 3
+    idle_time_start = None
+    idle_height = 0.16
+    idle_mode_flag = False
+
     testQ3 = []
     targetposQ3 = []
 
@@ -225,27 +234,24 @@ def test3():
         # real time simulation
         t0 = time.perf_counter()
 
-        if not flag1:
-            flag1, q = safe_configuration(k, i * dt, 3)
+        if not safe_mode_flag:
+            safe_mode_flag, q = safe_configuration(k, i * dt, safe_mode_period)
             targetposQ3.append(q[2])  # keep the value to plot them (q3)
 
-        # elif flag3:  # wait for input to go in idle configuration
-        #     x = input('Press the X key:')
-        #     if x is 'x':
-        #         flag3 = False
+        elif wait_input_flag:  # wait for input to go in idle configuration
+            x = input('Press the X key:')
+            if x is 'x':
+                wait_input_flag = False
+                idle_time_start = dt * i
 
-        elif not flag2:
-            flag2, q = idle_configuration(k, i * dt, 3, h=0.24)
+        elif not idle_mode_flag:
+            idle_mode_flag, q = idle_configuration(k, i * dt - idle_time_start, idle_mode_period, h=idle_height)
             targetposQ3.append(q[2])  # keep the value to plot them (q3)
 
-        else:
-            pass
-
-        testQ3.append(np.array(p.getJointStates(robot_id, rev_joint_idx))[2, 0])
-
-        # print(q)
         p.setJointMotorControlArray(robot_id, rev_joint_idx, controlMode=p.POSITION_CONTROL,
-                                    targetPositions=q)  # targetVelocities=dq
+                                    targetPositions=q)
+
+        testQ3.append(p.getJointStates(robot_id, rev_joint_idx)[2][0])
 
         # next step simulation
         p.stepSimulation()
@@ -305,7 +311,7 @@ def test4():
 
 
 if __name__ == '__main__':
-    # test_1()
+    test_1()
     # test_2()
-    test3()
+    # test3()
     # test4()
