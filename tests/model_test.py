@@ -25,9 +25,9 @@ def test_1():
     constraints = np.array([0, np.pi, -np.pi, np.pi, -np.pi, 0] * 4)
     k = BulletWrapper(L)
 
-    T = 1
+    T = 0.5
     Lpx = 0.
-    Lpy = 0.15
+    Lpy = 0.1
     x0 = -L[1] - L[2] - L[3]
     y0 = -(L[0] + Lpy / 2)
     z0 = -0.2
@@ -276,7 +276,7 @@ def test4():
     """
 
     L = [0.1946, 0.0875, 0.014, 0.03745, 0.16, 0.008, 0.16]
-    T = 0.5
+    T = 0.3
     dt = 0.01  # define the time step in second
     duration = 4000 * T  # define the duration of the simulation in seconds
     robot_id, rev_joint_idx = configure_simulation(dt, True)

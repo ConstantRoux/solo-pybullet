@@ -28,7 +28,7 @@ def safe_configuration(k, t, duration):
     return (t >= duration), Q
 
 
-def idle_configuration(k, t, duration, h=0.18):
+def idle_configuration(k, t, duration, h=0.16):
     """
     Move the robot's joints so the robot stand in idle position
     :param k: bullet wrapper
