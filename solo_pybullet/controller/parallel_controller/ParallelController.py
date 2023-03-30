@@ -5,10 +5,7 @@ from solo_pybullet.math.matrix_math import Th
 
 class ParallelController:
     @staticmethod
-    def controller(k, tx, ty, tz, rx, ry, rz):
-        # TODO constraints
-        constraints = np.array([0, np.pi, -np.pi, np.pi, -np.pi, 0] * 4)
-
+    def controller(k, tx, ty, tz, rx, ry, rz, constraints):
         # set T01 (foot to shoulder) using inputs
         R = Rot(rx, ry, rz)
         P = np.array([tx, ty, tz])

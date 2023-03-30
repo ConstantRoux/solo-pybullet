@@ -5,11 +5,11 @@ class Parameters:
     @staticmethod
     def init_params():
         global T, xF0, yF0, z0, dx, dz
-        p.addUserDebugParameter("  tx  ", -0.1, 0.1, 0)
-        p.addUserDebugParameter("  ty  ", -0.1, 0.1, 0)
+        p.addUserDebugParameter("  tx  ", -0.25, 0.25, 0)
+        p.addUserDebugParameter("  ty  ", -0.25, 0.25, 0)
         p.addUserDebugParameter("  tz  ", 0., 0.32, 0.16)
         p.addUserDebugParameter("  rx  ", -1, 1, 0)
-        p.addUserDebugParameter("  ry  ", -1, 1, 0)
+        p.addUserDebugParameter("  ry  ", -1.5, 1.5, 0)
         p.addUserDebugParameter("  rz  ", -0.8, 0.8, 0)
 
     @staticmethod

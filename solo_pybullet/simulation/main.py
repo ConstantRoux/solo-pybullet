@@ -24,6 +24,7 @@ def main():
     #################################
     # robot parameters
     L = [0.1946, 0.0875, 0.014, 0.03745, 0.16, 0.008, 0.16]  # length between each joint for the four legs of the robot
+    constraints = np.array([0, np.pi, -np.pi, np.pi, -np.pi, 0] * 4)  # constraints for each joint
     safe_mode_duration = 1  # wanted time to move from pybullet init config to safe position (lying on the ground)
     idle_mode_duration = 1  # wanted time to move from safe position to idle position
 
@@ -70,7 +71,7 @@ def main():
         #################################
         # init robot
         if state == 0:
-            flag, Q = safe_configuration(k, dt * i, safe_mode_duration)
+            flag, Q = safe_configuration(k, dt * i, safe_mode_duration, constraints)
             if flag:
                 state = 1
 
@@ -83,7 +84,7 @@ def main():
 
         # move robot to idle position
         elif state == 2:
-            flag, Q = idle_configuration(k, dt * i - idle_start_time, idle_mode_duration)
+            flag, Q = idle_configuration(k, dt * i - idle_start_time, idle_mode_duration, constraints)
             if flag:
                 state = 3
 

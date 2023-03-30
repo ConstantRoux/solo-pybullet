@@ -170,10 +170,10 @@ def test_2():
     ####################
     L = [0.1946, 0.0875, 0.014, 0.03745, 0.16, 0.008, 0.16]
     k = BulletWrapper(L)
-
+    constraints = np.array([0, np.pi, -np.pi, np.pi, -np.pi, 0] * 4)
     duration = 3600  # define the duration of the simulation in seconds
     dt = 0.01  # define the time step in second
-    robot_id, rev_joint_idx = configure_simulation(dt, True)
+    robot_id, rev_joint_idx = configure_simulation(dt, False)
     Parameters.init_params()
 
     ###############
@@ -184,7 +184,7 @@ def test_2():
         t0 = time.perf_counter()
 
         # compute desired configuration
-        q = ParallelController.controller(k, *Parameters.get_params())
+        q = ParallelController.controller(k, *Parameters.get_params(), constraints)
 
         p.setJointMotorControlArray(robot_id, rev_joint_idx, controlMode=p.POSITION_CONTROL,
                                     targetPositions=q)
@@ -211,6 +211,7 @@ def test3():
     dt = 0.01  # define the time step in second
     duration = 16 * T  # define the duration of the simulation in seconds
     robot_id, rev_joint_idx = configure_simulation(dt, True)
+    constraints = np.array([0, np.pi, -np.pi, np.pi, -np.pi, 0] * 4)
 
     k = BulletWrapper(L)
     k.kinematics.debug = True
@@ -235,7 +236,7 @@ def test3():
         t0 = time.perf_counter()
 
         if not safe_mode_flag:
-            safe_mode_flag, q = safe_configuration(k, i * dt, safe_mode_period)
+            safe_mode_flag, q = safe_configuration(k, i * dt, safe_mode_period, constraints)
             targetposQ3.append(q[2])  # keep the value to plot them (q3)
 
         elif wait_input_flag:  # wait for input to go in idle configuration
@@ -245,7 +246,7 @@ def test3():
                 idle_time_start = dt * i
 
         elif not idle_mode_flag:
-            idle_mode_flag, q = idle_configuration(k, i * dt - idle_time_start, idle_mode_period, h=idle_height)
+            idle_mode_flag, q = idle_configuration(k, i * dt - idle_time_start, idle_mode_period, constraints, h=idle_height)
             targetposQ3.append(q[2])  # keep the value to plot them (q3)
 
         p.setJointMotorControlArray(robot_id, rev_joint_idx, controlMode=p.POSITION_CONTROL,
@@ -311,7 +312,7 @@ def test4():
 
 
 if __name__ == '__main__':
-    test_1()
+    # test_1()
     # test_2()
-    # test3()
+    test3()
     # test4()
