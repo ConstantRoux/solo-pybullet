@@ -313,6 +313,6 @@ def test4():
 
 if __name__ == '__main__':
     # test_1()
-    # test_2()
-    test3()
+    test_2()
+    # test3()
     # test4()

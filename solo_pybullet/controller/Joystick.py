@@ -44,4 +44,3 @@ if __name__ == '__main__':
             break
             
         print(joy1, joy2)
-        time.sleep(2)

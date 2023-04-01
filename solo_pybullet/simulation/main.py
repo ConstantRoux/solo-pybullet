@@ -1,6 +1,7 @@
 #####################
 #  LOADING MODULES ##
 #####################
+import threading
 from enum import Enum
 
 import numpy as np
@@ -8,15 +9,16 @@ import pybullet as p
 import time
 
 from solo_pybullet.controller.robot_initialization import safe_configuration, idle_configuration
+from solo_pybullet.interface.Gamepad import gamepad_thread, mutex, inputs
 from solo_pybullet.model.robot.BulletWrapper import BulletWrapper
 from solo_pybullet.simulation.initialization_simulation import configure_simulation
-from solo_pybullet.controller.kinematic_controller.kinematic_controller import kinematic_controller
-
+from solo_pybullet.controller.parallel_controller.ParallelController import ParallelController
 
 class RobotMode(Enum):
     SAFETY_MODE = 0
     STATIC_MODE = 1
     WALK_MODE = 2
+
 
 def main():
     #################################
@@ -41,7 +43,7 @@ def main():
 
     # init robot model
     k = BulletWrapper(L)
-    k.kinematics.debug = True
+    k.kinematics.debug = False
 
     # init state machine
     state = 0
@@ -54,6 +56,11 @@ def main():
     idle_start_time = None
     Q = np.zeros((12,))
     dQ = np.zeros((12,))
+
+    #################################
+    #            REMOTE             #
+    #################################
+    threading.Thread(target=gamepad_thread, args=()).start()
 
     for i in range(int(sim_duration / dt)):
         #################################
@@ -86,7 +93,12 @@ def main():
         elif state == 2:
             flag, Q = idle_configuration(k, dt * i - idle_start_time, idle_mode_duration, constraints)
             if flag:
-                state = 3
+                state = 99
+
+        elif state == 99:
+            with mutex:
+                # print(inputs['AXIS_1'])
+                Q = ParallelController.controller(k, inputs['AXIS_X']/20, inputs['AXIS_Y']/20, inputs['AXIS_Z'], inputs['AXIS_RX']/3, inputs['AXIS_RY']/3, inputs['AXIS_RZ']/3, constraints)
 
         # check control mode
         elif state == 3:

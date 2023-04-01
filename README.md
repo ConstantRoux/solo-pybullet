@@ -51,5 +51,9 @@ sudo apt install -qqy robotpkg-py{PYTHON_VERSION}-{pinocchio,example-robot-data,
 pip3 install --user pybullet
 ```
 
+### Install remote controller dependencies
+https://blog.thea.codes/talking-to-gamepads-without-pygame/
+https://medium.com/devopss-hole/python-error-undefined-symbol-hid-get-input-report-c01af1ccf1f6
+
 ## How to start the simulation
 launch `gepetto-gui`, then `python3 -m solo_pybullet`
