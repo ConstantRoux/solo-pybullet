@@ -10,6 +10,7 @@ import time
 
 from solo_pybullet.controller.robot_initialization import safe_configuration, idle_configuration
 from solo_pybullet.interface.Gamepad import gamepad_thread, mutex, inputs
+from solo_pybullet.interface.GamePadToRobot import staticInput, walkInput
 from solo_pybullet.model.robot.BulletWrapper import BulletWrapper
 from solo_pybullet.simulation.initialization_simulation import configure_simulation
 from solo_pybullet.controller.parallel_controller.ParallelController import ParallelController
@@ -62,16 +63,14 @@ def main():
     #################################
     threading.Thread(target=gamepad_thread, args=()).start()
 
+    previousValuesStatic = np.zeros((6,))
+    previousValuesWalk = np.zeros((2,))
+
     for i in range(int(sim_duration / dt)):
         #################################
         #           REAL TIME           #
         #################################
         t0 = time.perf_counter()
-
-        #################################
-        #            REMOTE             #
-        #################################
-        # TODO : get remote data
 
         #################################
         #         STATE MACHINE         #
@@ -96,9 +95,10 @@ def main():
                 state = 99
 
         elif state == 99:
-            with mutex:
-                # print(inputs['AXIS_1'])
-                Q = ParallelController.controller(k, inputs['AXIS_X']/20, inputs['AXIS_Y']/20, inputs['AXIS_Z'], inputs['AXIS_RX']/3, inputs['AXIS_RY']/3, inputs['AXIS_RZ']/3, constraints)
+            valuesStatic = staticInput(previousValuesStatic)
+
+            Q = ParallelController.controller(k, *valuesStatic, constraints)
+            previousValuesStatic = valuesStatic.copy()
 
         # check control mode
         elif state == 3:
@@ -149,11 +149,13 @@ def main():
 
         # execute the mode STATIC_MODE
         elif state == 52:
-            # TODO : convert remote inputs into commands (Tx, Ty, Tz, Rx, Ry, Rz)
+            walkInputs = walkinput()
+            # Q = walkingMode(walkingInputs['V'], walkingInputs['Omega'])
             state = 3
 
         # execute the mode WALK_MODE
         elif state == 53:
+
             state = 3
 
         #################################

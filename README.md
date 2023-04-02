@@ -55,5 +55,7 @@ pip3 install --user pybullet
 https://blog.thea.codes/talking-to-gamepads-without-pygame/
 https://medium.com/devopss-hole/python-error-undefined-symbol-hid-get-input-report-c01af1ccf1f6
 
+pip install pyjoystick
+
 ## How to start the simulation
 launch `gepetto-gui`, then `python3 -m solo_pybullet`
