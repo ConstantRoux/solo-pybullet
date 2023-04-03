@@ -4,6 +4,10 @@ import pybullet as p
 class Parameters:
     @staticmethod
     def init_params():
+        """
+        sliders for the test in pybullet
+        :return:
+        """
         global T, xF0, yF0, z0, dx, dz
         p.addUserDebugParameter("  tx  ", -0.25, 0.25, 0)
         p.addUserDebugParameter("  ty  ", -0.25, 0.25, 0)

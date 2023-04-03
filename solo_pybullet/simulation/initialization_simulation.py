@@ -23,7 +23,7 @@ def configure_simulation(dt, fixedBase=False):
     p.setAdditionalSearchPath("/opt/openrobots/share/example-robot-data/robots/solo_description/robots")
     robot_id = p.loadURDF("solo12.urdf", robot_start_pos, robot_start_orientation, useFixedBase=fixedBase)
 
-    # disable default motor control for revolute joints
+    # disable default actuator control for revolute joints
     rev_joint_idx = [0, 1, 2, 4, 5, 6, 8, 9, 10, 12, 13, 14]
     p.setJointMotorControlArray(robot_id, jointIndices=rev_joint_idx, controlMode=p.VELOCITY_CONTROL,
                                 targetVelocities=[0.0 for m in rev_joint_idx],
@@ -37,22 +37,3 @@ def configure_simulation(dt, fixedBase=False):
     p.stepSimulation()
 
     return robot_id, rev_joint_idx
-
-
-def get_pos_vel_joints(robot_id, rev_joint_idx):
-    # state of all joints
-    joint_states = p.getJointStates(robot_id, rev_joint_idx)
-
-    # position and orientation of the free flying base
-    base_state = p.getBasePositionAndOrientation(robot_id)
-
-    # velocity of the free flying base
-    base_vel = p.getBaseVelocity(robot_id)
-
-    # Reshaping data into q and qdot
-    q = np.vstack((np.array([base_state[0]]).transpose(), np.array([base_state[1]]).transpose(),
-                   np.array([[joint_states[i_joint][0] for i_joint in range(len(joint_states))]]).transpose()))
-    qdot = np.vstack((np.array([base_vel[0]]).transpose(), np.array([base_vel[1]]).transpose(),
-                      np.array([[joint_states[i_joint][1] for i_joint in range(len(joint_states))]]).transpose()))
-
-    return q, qdot

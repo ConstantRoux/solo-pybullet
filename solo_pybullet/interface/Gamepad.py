@@ -8,14 +8,29 @@ inputs = {'LeftJoy_H': 0, 'LeftJoy_V': 0, 'Trigger': 0, 'RightJoy_H': 0, 'RightJ
 
 
 def print_add(joy):
+    """
+    Bind the gamepad when connected to the application
+    :param joy:
+    :return:
+    """
     print('Added', joy)
 
 
 def print_remove(joy):
+    """
+    Remove the gamepad when disconnected for the computer
+    :param joy:
+    :return:
+    """
     print('Removed', joy)
 
 
 def key_received(key):
+    """
+    Get the input and map them to variables
+    :param key:
+    :return:
+    """
     with mutex:
         if key.keyname == 'Axis 0' or key.keyname == '-Axis 0':
             inputs['LeftJoy_V'] = -key.value

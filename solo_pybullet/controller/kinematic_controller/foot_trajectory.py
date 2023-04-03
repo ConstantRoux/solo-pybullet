@@ -5,7 +5,15 @@ import numpy as np
 from solo_pybullet.controller.kinematic_controller.params import *
 
 
-def foot_trajectory(t, x0, y0, z0):  # arguments : time, initial position x, y and z
+def foot_trajectory(t, x0, y0, z0):
+    """
+    First atempte of foot trajectory (OLD)
+    :param t: Current time in the simulation in second
+    :param x0: initial position on x axis
+    :param y0: initial position on y axis
+    :param z0: initial position on z axis
+    :return: Feet position in space
+    """
     T, xF0, xH0, yF0, yH0, z0, dx, dz = update_params()
     x = []
     y = []
@@ -22,6 +30,11 @@ def foot_trajectory(t, x0, y0, z0):  # arguments : time, initial position x, y a
 
 
 def d_foot_trajectory(t):  # arguments : time
+    """
+
+    :param t:Current time in the simulation in second
+    :return: Feet velocity in space
+    """
     x = []
     y = []
     z = []

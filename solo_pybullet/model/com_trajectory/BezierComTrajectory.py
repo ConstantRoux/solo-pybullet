@@ -2,6 +2,9 @@ import numpy as np
 
 
 class BezierComTrajectory:
+    """
+    Trajectory of Center Of Mass
+    """
     @staticmethod
     def c(s, Pc):
         return (1 - s) * (1 - s) * Pc[0] + 2 * (1 - s) * s * Pc[1] + s * s * Pc[2]

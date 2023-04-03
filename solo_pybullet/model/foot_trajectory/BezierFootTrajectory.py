@@ -5,6 +5,15 @@ from matplotlib import pyplot as plt
 class BezierFootTrajectory:
     @staticmethod
     def f(t, T, Pi, Pf, dir=False):
+        """
+        Position trajectory
+        :param t: time step
+        :param T: Periode of a feet step
+        :param Pi: Initial position
+        :param Pf: Final position
+        :param dir: Direction of the step
+        :return:
+        """
         # modulo on a period
         t = t % T
 
@@ -39,6 +48,15 @@ class BezierFootTrajectory:
 
     @staticmethod
     def df(t, T, Pi, Pf, dir=False):
+        """
+        Velocity trajectory
+        :param t: time step
+        :param T: Periode of a feet step
+        :param Pi: Initial position
+        :param Pf: Final position
+        :param dir: Direction of the step
+        :return:
+        """
         # modulo on a period
         t = t % T
 
@@ -80,6 +98,15 @@ class BezierFootTrajectory:
 
     @staticmethod
     def d2f(t, T, Pi, Pf, dir=False):
+        """
+        Acceleration trajectory
+        :param t: time step
+        :param T: Periode of a feet step
+        :param Pi: Initial position
+        :param Pf: Final position
+        :param dir: Direction of the step
+        :return:
+        """
         # modulo on a period
         t = t % T
 
@@ -115,6 +142,9 @@ class BezierFootTrajectory:
 
 
 if __name__ == '__main__':
+    """
+    Visualise the foot trajectory over a feet periode
+    """
     n_size = 1000
     T = 1
     t = np.linspace(0, T, n_size)

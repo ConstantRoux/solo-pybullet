@@ -8,7 +8,7 @@ import numpy as np
 import pybullet as p
 import time
 
-from solo_pybullet.controller.robot_initialization import safe_configuration, idle_configuration
+from solo_pybullet.controller.initialization_controller.robot_initialization import safe_configuration, idle_configuration
 from solo_pybullet.interface.Gamepad import gamepad_thread, mutex, inputs
 from solo_pybullet.interface.GamePadToRobot import staticInput, walkInput
 from solo_pybullet.model.robot.BulletWrapper import BulletWrapper

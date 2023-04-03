@@ -9,10 +9,13 @@ from solo_pybullet.model.foot_trajectory.BezierFootTrajectory import BezierFootT
 
 class Kinematics:
     def __init__(self, L):
-        # offsets
+        """
+
+        :param L: length between links
+        """
         self.L = L
 
-        # rotation to pass from FR to others
+        # rotation to pass from FR (FrontRight) leg to other legs
         self.labels = ['FL', 'FR', 'HL', 'HR']
         self.r = {'FL': np.matrix([[-1, 0, 0, 0],
                                    [0, 1, 0, 0],
@@ -38,6 +41,12 @@ class Kinematics:
         self.debug = False
 
     def forward_kinematics(self, Q, dQ):
+        """
+        compute the robot position form the current configuration
+        :param Q: current configuration
+        :param dQ: current velocities of joints
+        :return:
+        """
         P = np.zeros(12, )
         dP = np.zeros(12, )
 
@@ -48,6 +57,13 @@ class Kinematics:
         return P, dP
 
     def inverse_kinematics(self, P, dP, constraints):
+        """
+        Compute the robot joints configuration from points in space
+        :param P: Points in space of each leg, [x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4]
+        :param dP: Velocities in space of each leg, [dx1, dy1, dz1, dx2, dy2, dz2, dx3, dy3, dz3, dx4, dy4, dz4]
+        :param constraints: constrain the robot joints
+        :return: return the current configuration and the velocities of each joints
+        """
         Q = np.zeros((12,))
         dQ = np.zeros((12,))
 
@@ -65,6 +81,12 @@ class Kinematics:
         return Q, dQ
 
     def body_inverse_kinematics(self, T, constraints):
+        """
+
+        :param T: Homogeneous matrix giving rotation and translation
+        :param constraints: constrain the robot joints
+        :return: Configuration of each robot links
+        """
         # TODO generic foothold positions, compute dQ, add generic constraints
         # compute T10 (shoulder to foot)
         Tinv = np.linalg.inv(T)
@@ -89,18 +111,28 @@ class Kinematics:
 
         # compute configurations
         P = np.array(np.concatenate([delta_FL[0, :3], delta_FR[0, :3], delta_HL[0, :3], delta_HR[0, :3]], axis=1)).flatten()
-        dP = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+        dP = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]) # velocity control is not implement yet
         q, _ = self.inverse_kinematics(P, dP, constraints)
 
         return q
 
     def linearJacobian(self, Q):
+        """
+        Compute the Jacobian matrix for the entire robot
+        :param Q: current joints configuration
+        :return: Jacobian matrix
+        """
         J = np.zeros((3, 12))
         for i in range(4):
             J[:, 3 * i: 3 * (i + 1)] = self.__linearJacobian(Q[3 * i: 3 * (i + 1)])
         return J
 
     def __forward_kinematics(self, Q):
+        """
+        Compute the leg position in relation to robot frame
+        :param Q: Current configuration of a leg
+        :return: Leg position in the robot frame
+        """
         q1, q2, q3 = Q
         L1, L2, L3, L4, L5, L6, L7 = self.L
         T04 = np.matrix([[c(q1) * c(q2) * c(q3) - c(q1) * s(q2) * s(q3),
@@ -118,6 +150,13 @@ class Kinematics:
         return T04[0:3, 3].flatten()
 
     def __inverse_kinematics(self, pos, constraints, leg_idx):
+        """
+        Compute the configuration of a leg from it position in relation to the robot frame
+        :param pos: Point in the robot frame
+        :param constraints: constrain the robot joints
+        :param leg_idx: which leg is consdered
+        :return: Leg configuration
+        """
         L1, L2, L3, L4, L5, L6, L7 = self.L
 
         ######################################################
@@ -182,6 +221,11 @@ class Kinematics:
         return np.array([q1, q2, q3])
 
     def __linearJacobian(self, Q):
+        """
+        Compute the Jacobian matrix for leg
+        :param Q: Current configuration of a leg
+        :return: The Jacobian matrix of a leg
+        """
         q1, q2, q3 = Q
         L1, L2, L3, L4, L5, L6, L7 = self.L
 
@@ -192,6 +236,11 @@ class Kinematics:
                            s(q1) * (L7 * s(q2 + q3) - s(q2) * L5), s(q1) * L7 * s(q2 + q3)]])
 
     def __T01(self, q1):
+        """
+        Homogeneous matrix from frame 0 to frame 1
+        :param q1: first link of a leg
+        :return: Homogeneous matrix
+        """
         L = self.L
         return np.matrix([[c(q1), -s(q1), 0, -L[1]],
                           [0, 0, -1, -L[0]],
@@ -199,12 +248,22 @@ class Kinematics:
                           [0, 0, 0, 1]])
 
     def __T12(self, q2):
+        """
+        Homogeneous matrix from frame 1 to frame 2
+        :param q2: second link of a leg
+        :return: Homogeneous matrix
+        """
         return np.matrix([[c(q2), -s(q2), 0, 0],
                           [0, 0, 1, 0],
                           [-s(q2), -c(q2), 0, 0],
                           [0, 0, 0, 1]])
 
     def __T23(self, q3):
+        """
+        Homogeneous matrix from frame 2 to frame 3
+        :param q3: third link of a leg
+        :return: Homogeneous matrix
+        """
         L = self.L
         return np.matrix([[c(q3), -s(q3), 0, L[4]],
                           [s(q3), c(q3), 0, 0],
@@ -212,6 +271,10 @@ class Kinematics:
                           [0, 0, 0, 1]])
 
     def __T34(self):
+        """
+        Homogeneous matrix from frame 3 to frame 4
+        :return: Homogeneous matrix
+        """
         L = self.L
         return np.matrix([[1, 0, 0, -L[6]],
                           [0, 1, 0, 0],
@@ -219,6 +282,13 @@ class Kinematics:
                           [0, 0, 0, 1]])
 
     def T0k(self, q, k, R):
+        """
+        Compute the all homogeneous matrix from 0 to k frame
+        :param q: configuration of a leg
+        :param k: number of frame
+        :param R:
+        :return:
+        """
         funcs = [self.__T01, self.__T12, self.__T23, self.__T34]
         T0k = np.identity(4)
         for i in range(0, k):
@@ -230,6 +300,10 @@ class Kinematics:
 
 
 def test_1():
+    """
+    Early test, all leg does the same movement, visualise the current configuration, move each links (q1, q2, q3)
+    :return:
+    """
     # imports
     from solo_pybullet.model.foot_trajectory.CycloidFootTrajectory import CycloidFootTrajectory
     from solo_pybullet.model.robot.Viewer import Viewer
@@ -252,6 +326,9 @@ def test_1():
     t = np.linspace(0, T, 15)
     res = np.empty((12, len(t)))
     for i, t0 in enumerate(t):
+        """
+        Chose between the early foot trajectory(CycloidFootTrajectory) or the new one (BézierFootTrajectory)
+        """
         # res[0:3, i] = CycloidFootTrajectory.f(t0, T, np.array([x0, y0, z0]), H, np.array([0, Lp]), dir=False)
         # res[3:6, i] = CycloidFootTrajectory.f(t0, T, np.array([x0, y0, z0]), H, np.array([0, Lp]), dir=False)
         # res[6:9, i] = CycloidFootTrajectory.f(t0, T, np.array([x0, y0, z0]), H, np.array([0, Lp]), dir=False)

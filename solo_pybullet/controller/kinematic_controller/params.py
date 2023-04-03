@@ -12,10 +12,14 @@ yH0 = -0.14695  # initial Y position of the hind feet
 z0 = -0.25  # negative distance between the base and the ground
 
 dx = 0.03  # displacement amplitude by x
-dz = 0.03  # displacement amplitude by z
+dz = 0.03  # diIntializesplacement amplitude by z
 
 
 def init_params():
+    """
+    Intialize slider for the static mode, for test only
+    :return:
+    """
     global T, xF0, yF0, z0, dx, dz
     p.addUserDebugParameter("  T  ",  0, 10, T)
     p.addUserDebugParameter("  x0  ", 0, 0.35, xF0)
@@ -26,6 +30,10 @@ def init_params():
 
 
 def update_params():
+    """
+    Update slider for the static mode, for test only
+    :return:
+    """
     global T, xF0, xH0, yF0, yH0, z0, dx, dz
     T = p.readUserDebugParameter(0)
     xF0 = p.readUserDebugParameter(1)
