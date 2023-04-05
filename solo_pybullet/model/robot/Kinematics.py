@@ -116,6 +116,44 @@ class Kinematics:
 
         return q
 
+
+    def walk_inverse_kinematics(self, T, dT, P, constraints):
+        """
+
+        :param T: Homogeneous matrix giving rotation and translation
+        :param constraints: constrain the robot joints
+        :return: Configuration of each robot links
+        """
+        # TODO generic foothold positions, compute dQ, add generic constraints
+        # compute T10 (shoulder to foot)
+        Tinv = np.linalg.inv(T)
+
+        # convert feet position expressed in local frame in world frame
+        FL0 = self.r['FL'] @ np.append(P[0:3], 1)
+        FR0 = self.r['FR'] @ np.append(P[3:6], 1)
+        HL0 = self.r['HL'] @ np.append(P[6:9], 1)
+        HR0 = self.r['HR'] @ np.append(P[9:12], 1)
+
+        # get foot positions in the shoulder frame
+        FL1 = Tinv @ FL0.T
+        FR1 = Tinv @ FR0.T
+        HL1 = Tinv @ HL0.T
+        HR1 = Tinv @ HR0.T
+
+        # compute pos in each local frame
+        delta_FL = (self.r['FL'] @ FL1).T
+        delta_FR = (self.r['FR'] @ FR1).T
+        delta_HL = (self.r['HL'] @ HL1).T
+        delta_HR = (self.r['HR'] @ HR1).T
+
+        # compute configurations
+        P = np.array(np.concatenate([delta_FL[0, :3], delta_FR[0, :3], delta_HL[0, :3], delta_HR[0, :3]], axis=1)).flatten()
+        dP = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]) # velocity control is not implement yet
+        q, _ = self.inverse_kinematics(P, dP, constraints)
+
+        return q
+
+
     def linearJacobian(self, Q):
         """
         Compute the Jacobian matrix for the entire robot

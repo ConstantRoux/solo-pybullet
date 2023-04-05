@@ -60,6 +60,30 @@ class BulletWrapper:
 
         return Q
 
+    def walking_inverse_kinematics(self, T, dT, P, constraints):
+
+        prev_Q = self.kinematics.current_Q
+        # P = np.array([-self.L[1] - self.L[2] - self.L[3] - self.L[5], -self.L[0], 0., -self.L[1] - self.L[2] - self.L[3] - self.L[5], -self.L[0], 0., -self.L[1] - self.L[2] - self.L[3] - self.L[5], -self.L[0], 0., -self.L[1] - self.L[2] - self.L[3] - self.L[5], -self.L[0], 0. ])
+        Q = self.kinematics.walk_inverse_kinematics(T, dT, P, constraints)
+
+        # pattes  1 3
+        # mgi pattes 1 3
+
+
+        # convert model config to pybullet config
+        self.rev_counter[(prev_Q - Q) >= np.pi] += 1
+        self.rev_counter[(prev_Q - Q) <= -np.pi] -= 1
+        Q += 2 * np.pi * self.rev_counter
+        for i in range(4):
+            inv_X = -1 if i == 0 or i == 2 else 1
+            inv_Y = 1 if i == 2 or i == 3 else -1
+
+            Q[3 * i] = inv_X * (Q[3 * i] - np.pi / 2)
+            Q[3 * i + 1] = inv_Y * (Q[3 * i + 1] - np.pi)
+            Q[3 * i + 2] = inv_Y * (Q[3 * i + 2] - np.pi)
+
+        return Q
+
     def inverse_kinematics(self, P, dP, constraints):
         """
         Compute the joints configuration and velocity

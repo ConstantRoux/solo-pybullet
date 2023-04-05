@@ -23,14 +23,10 @@ def staticInput(previousValues, scale=[16, 10, 100, 2, 2, 1.5], rawValuesWeight=
 
 def walkInput():
     walkingInput = {'V': 0, 'Omega': 0}
-    # TODO : convert remote inputs into commands (Tx, Ty, Tz, Rx, Ry, Rz)
     with mutex:
         copyInputs = inputs.copy()
 
-    walkingInput['V'] = 0
-    walkingInput['Omega'] = 0
-
-    return walkingInput
+    return copyInputs
 
 
 if __name__ == '__main__':
