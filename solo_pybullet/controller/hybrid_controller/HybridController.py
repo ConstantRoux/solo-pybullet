@@ -3,9 +3,9 @@ from solo_pybullet.math.matrix_math import R as Rot
 from solo_pybullet.math.matrix_math import Th
 
 
-class WalkController:
+class HybridController:
     @staticmethod
-    def controller(k, tx, ty, tz, rx, ry, rz, FootPose, constraints):
+    def controller(k, tx, ty, tz, rx, ry, rz, P, dP, constraints):
         """
         Process the inputs to move the robot in the disired configuration
         :param k: robot wrapper
@@ -15,12 +15,14 @@ class WalkController:
         :param rx: rotation on x axis
         :param ry: rotation on y axis
         :param rz: rotation on z axis
+        :param P: TODO
+        :param dP: TODO
         :param constraints: constrain the robot joints
         :return: desired configuration
         """
         # set T01 (foot to shoulder) using inputs
         R = Rot(rx, ry, rz)
-        P = np.array([tx, ty, tz])
-        T01 = Th(R, P)
+        Tr = np.array([tx, ty, tz])
+        T01 = Th(R, Tr)
 
-        return k.walking_inverse_kinematics(T01, None ,FootPose, constraints)
+        return k.body_inverse_kinematics(T01, P, dP, constraints)

@@ -23,4 +23,11 @@ class ParallelController:
         P = np.array([tx, ty, tz])
         T01 = Th(R, P)
 
-        return k.body_inverse_kinematics(T01, constraints)
+        P = np.array([-k.L[1] - k.L[2] - k.L[3] - k.L[5], -k.L[0], 0.,
+                      -k.L[1] - k.L[2] - k.L[3] - k.L[5], -k.L[0], 0.,
+                      -k.L[1] - k.L[2] - k.L[3] - k.L[5], -k.L[0], 0.,
+                      -k.L[1] - k.L[2] - k.L[3] - k.L[5], -k.L[0], 0.])
+
+        dP = np.zeros((12,))
+
+        return k.body_inverse_kinematics(T01, P, dP, constraints)

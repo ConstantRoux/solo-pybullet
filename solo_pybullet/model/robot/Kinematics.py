@@ -80,51 +80,15 @@ class Kinematics:
 
         return Q, dQ
 
-    def body_inverse_kinematics(self, T, constraints):
+    def body_inverse_kinematics(self, T, P, dP, constraints):
         """
 
         :param T: Homogeneous matrix giving rotation and translation
+        :param P:
+        :param dP:
         :param constraints: constrain the robot joints
         :return: Configuration of each robot links
         """
-        # TODO generic foothold positions, compute dQ, add generic constraints
-        # compute T10 (shoulder to foot)
-        Tinv = np.linalg.inv(T)
-
-        # set foot positions in the foot frame
-        FL0 = np.array([self.L[1] + self.L[2] + self.L[3] + self.L[5], -self.L[0], 0., 1])
-        FR0 = np.array([-self.L[1] - self.L[2] - self.L[3] - self.L[5], -self.L[0], 0., 1])
-        HL0 = np.array([self.L[1] + self.L[2] + self.L[3] + self.L[5], self.L[0], 0., 1])
-        HR0 = np.array([-self.L[1] - self.L[2] - self.L[3] - self.L[5], self.L[0], 0., 1])
-
-        # get foot positions in the shoulder frame
-        FL1 = Tinv @ FL0
-        FR1 = Tinv @ FR0
-        HL1 = Tinv @ HL0
-        HR1 = Tinv @ HR0
-
-        # compute pos in each local frame
-        delta_FL = (self.r['FL'] @ FL1.T).T
-        delta_FR = (self.r['FR'] @ FR1.T).T
-        delta_HL = (self.r['HL'] @ HL1.T).T
-        delta_HR = (self.r['HR'] @ HR1.T).T
-
-        # compute configurations
-        P = np.array(np.concatenate([delta_FL[0, :3], delta_FR[0, :3], delta_HL[0, :3], delta_HR[0, :3]], axis=1)).flatten()
-        dP = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]) # velocity control is not implement yet
-        q, _ = self.inverse_kinematics(P, dP, constraints)
-
-        return q
-
-
-    def walk_inverse_kinematics(self, T, dT, P, constraints):
-        """
-
-        :param T: Homogeneous matrix giving rotation and translation
-        :param constraints: constrain the robot joints
-        :return: Configuration of each robot links
-        """
-        # TODO generic foothold positions, compute dQ, add generic constraints
         # compute T10 (shoulder to foot)
         Tinv = np.linalg.inv(T)
 
@@ -141,18 +105,35 @@ class Kinematics:
         HR1 = Tinv @ HR0.T
 
         # compute pos in each local frame
-        delta_FL = (self.r['FL'] @ FL1).T
-        delta_FR = (self.r['FR'] @ FR1).T
-        delta_HL = (self.r['HL'] @ HL1).T
-        delta_HR = (self.r['HR'] @ HR1).T
+        local_FL = (self.r['FL'] @ FL1).T
+        local_FR = (self.r['FR'] @ FR1).T
+        local_HL = (self.r['HL'] @ HL1).T
+        local_HR = (self.r['HR'] @ HR1).T
+
+        # convert feet velocity expressed in local frame in world frame
+        dFL0 = self.r['FL'] @ np.append(dP[0:3], 1)
+        dFR0 = self.r['FR'] @ np.append(dP[3:6], 1)
+        dHL0 = self.r['HL'] @ np.append(dP[6:9], 1)
+        dHR0 = self.r['HR'] @ np.append(dP[9:12], 1)
+
+        # get foot velocities in the shoulder frame
+        dFL1 = Tinv @ dFL0.T
+        dFR1 = Tinv @ dFR0.T
+        dHL1 = Tinv @ dHL0.T
+        dHR1 = Tinv @ dHR0.T
+
+        # compute pos in each local frame
+        local_dFL = (self.r['FL'] @ dFL1).T
+        local_dFR = (self.r['FR'] @ dFR1).T
+        local_dHL = (self.r['HL'] @ dHL1).T
+        local_dHR = (self.r['HR'] @ dHR1).T
 
         # compute configurations
-        P = np.array(np.concatenate([delta_FL[0, :3], delta_FR[0, :3], delta_HL[0, :3], delta_HR[0, :3]], axis=1)).flatten()
-        dP = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]) # velocity control is not implement yet
-        q, _ = self.inverse_kinematics(P, dP, constraints)
+        P = np.array(np.concatenate([local_FL[0, :3], local_FR[0, :3], local_HL[0, :3], local_HR[0, :3]], axis=1)).flatten()
+        dP = np.array(np.concatenate([local_dFL[0, :3], local_dFR[0, :3], local_dHL[0, :3], local_dHR[0, :3]], axis=1)).flatten()
+        Q, dQ = self.inverse_kinematics(P, dP, constraints)
 
-        return q
-
+        return Q, dQ
 
     def linearJacobian(self, Q):
         """

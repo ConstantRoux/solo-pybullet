@@ -5,18 +5,13 @@
 import time
 import numpy as np
 import pybullet as p
-import matplotlib.pyplot as plt
-
-from solo_pybullet.controller.optimization_controller.OptimizationController import OptimizationController
 from solo_pybullet.controller.parallel_controller.ParallelController import ParallelController
 from solo_pybullet.controller.parallel_controller.Parameters import Parameters
-from solo_pybullet.controller.initialization_controller.robot_initialization import idle_configuration, safe_configuration
 from solo_pybullet.simulation.initialization_simulation import configure_simulation
-from solo_pybullet.logger.Logger import Logger
-from solo_pybullet.model.foot_trajectory.CycloidFootTrajectory import CycloidFootTrajectory
-from solo_pybullet.model.foot_trajectory.BezierFootTrajectory import BezierFootTrajectory
 from solo_pybullet.model.robot.BulletWrapper import BulletWrapper
-def test_2():
+
+
+def test():
     ####################
     #  INITIALIZATION ##
     ####################
@@ -36,10 +31,10 @@ def test_2():
         t0 = time.perf_counter()
 
         # compute desired configuration
-        q = ParallelController.controller(k, *Parameters.get_params(), constraints)
+        Q, dQ = ParallelController.controller(k, *Parameters.get_params(), constraints)
         
         p.setJointMotorControlArray(robot_id, rev_joint_idx, controlMode=p.POSITION_CONTROL,
-                                    targetPositions=q)
+                                    targetPositions=Q, targetVelocities=dQ)
 
         # next step simulation
         p.stepSimulation()
@@ -52,5 +47,6 @@ def test_2():
     # quit pybullet
     p.disconnect()
 
+
 if __name__ == '__main__':
-    test_2()
+    test()

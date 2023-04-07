@@ -2,7 +2,10 @@ import numpy as np
 from solo_pybullet.interface.Gamepad import inputs, mutex
 
 
-def staticInput(previousValues, scale=[16, 10, 100, 2, 2, 1.5], rawValuesWeight=np.array([0.8, 0.8, 1, 0.8, 0.8, 0.8]), previousValuesWeight=np.array([0.2, 0.2, 0, 0.2, 0.2, 0.2]), diviserFactor=np.array([2, 2, 1, 2, 2, 2])):
+def staticInput(previousValues, scale=np.array([16, 10, 100, 2, 2, 1.5]),
+                rawValuesWeight=np.array([0.8, 0.8, 1, 0.8, 0.8, 0.8]),
+                previousValuesWeight=np.array([0.2, 0.2, 0, 0.2, 0.2, 0.2]),
+                diviserFactor=np.array([2, 2, 1, 2, 2, 2])):
     # TODO : clamp Tz value (copyInputs['Hat_V'])
     with mutex:
         copyInputs = inputs.copy()
