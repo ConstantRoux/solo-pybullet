@@ -24,25 +24,14 @@ class FootHolder:
             L = self.max_step_length
 
         # compute the start and end foot position in right foot frame
-        Pi_FL = np.array([-(self.C[0] + 0.5 * L * np.cos(theta + np.pi)), self.C[1] + 0.5 * L * np.sin(theta + np.pi), 0, 1])
-        Pf_FL = np.array([-(self.C[0] + 0.5 * L * np.cos(theta)), self.C[1] + 0.5 * L * np.sin(theta), H, 1])
+        Pi_FL = np.array([-self.C[0] + 0.5 * L * np.cos(theta + np.pi), self.C[1] + 0.5 * L * np.sin(theta + np.pi), 0, 1])
+        Pf_FL = np.array([-self.C[0] + 0.5 * L * np.cos(theta), self.C[1] + 0.5 * L * np.sin(theta), H, 1])
         Pi_FR = np.array([self.C[0] + 0.5 * L * np.cos(theta + np.pi), self.C[1] + 0.5 * L * np.sin(theta + np.pi), 0, 1])
         Pf_FR = np.array([self.C[0] + 0.5 * L * np.cos(theta), self.C[1] + 0.5 * L * np.sin(theta), H, 1])
-        Pi_HL = np.array([-(self.C[0] + 0.5 * L * np.cos(theta + np.pi)), -(self.C[1] + 0.5 * L * np.sin(theta + np.pi)), 0, 1])
-        Pf_HL = np.array([-(self.C[0] + 0.5 * L * np.cos(theta)), -(self.C[1] + 0.5 * L * np.sin(theta)), H, 1])
-        Pi_HR = np.array([self.C[0] + 0.5 * L * np.cos(theta + np.pi), -(self.C[1] + 0.5 * L * np.sin(theta + np.pi)), 0, 1])
-        Pf_HR = np.array([self.C[0] + 0.5 * L * np.cos(theta), -(self.C[1] + 0.5 * L * np.sin(theta)), H, 1])
-
-        plt.scatter(*(Pi_FL[0:2]), c='b')
-        plt.scatter(*(Pf_FL[0:2]), c='r')
-        plt.scatter(*(Pi_FR[0:2]), c='b')
-        plt.scatter(*(Pf_FR[0:2]), c='r')
-        plt.scatter(*(Pi_HL[0:2]), c='b')
-        plt.scatter(*(Pf_HL[0:2]), c='r')
-        plt.scatter(*(Pi_HR[0:2]), c='b')
-        plt.scatter(*(Pf_HR[0:2]), c='r')
-
-        plt.show()
+        Pi_HL = np.array([-self.C[0] + 0.5 * L * np.cos(theta + np.pi), -self.C[1] + 0.5 * L * np.sin(theta + np.pi), 0, 1])
+        Pf_HL = np.array([-self.C[0] + 0.5 * L * np.cos(theta), -self.C[1] + 0.5 * L * np.sin(theta), H, 1])
+        Pi_HR = np.array([self.C[0] + 0.5 * L * np.cos(theta + np.pi), -self.C[1] + 0.5 * L * np.sin(theta + np.pi), 0, 1])
+        Pf_HR = np.array([self.C[0] + 0.5 * L * np.cos(theta), -self.C[1] + 0.5 * L * np.sin(theta), H, 1])
 
         Pi_FL = Pi_FL @ self.k.kinematics.r['FL']
         Pf_FL = Pf_FL @ self.k.kinematics.r['FL']
