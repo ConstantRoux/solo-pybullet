@@ -32,7 +32,6 @@ def key_received(key):
     :return:
     """
     with mutex:
-        print(key.keyname)
         if key.keyname == 'Axis 0' or key.keyname == '-Axis 0':
             inputs['LeftJoy_V'] = -key.value
         elif key.keyname == 'Axis 1' or key.keyname == '-Axis 1':
@@ -45,12 +44,14 @@ def key_received(key):
             inputs['RightJoy_H'] = -key.value
         elif key.keyname == 'Axis 4' or key.keyname == '-Axis 4':
             inputs['RightJoy_V'] = key.value
-        elif key.keyname == 'Hat 0 [Up]':
+        elif key.keyname == 'Hat 0 [Up]' and key.value == 1:
             inputs['Hat_V'] += 1
-        elif key.keyname == 'Hat 0 [Down]':
+        elif key.keyname == 'Hat 0 [Down]' and key.value == 1:
             inputs['Hat_V'] -= 1
-        elif key.keyname == 'Button 7':
+        elif key.keyname == 'Button 7' and key.value == 1:
             inputs['Start'] += 1
+        elif key.keyname == 'Button 6' and key.value == 1:
+            inputs['Select'] += 1
 
 
 def gamepad_thread():

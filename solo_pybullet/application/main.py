@@ -2,27 +2,19 @@
 #  LOADING MODULES ##
 #####################
 import threading
-from enum import Enum
-
 import numpy as np
 import pybullet as p
 import time
-
 from solo_pybullet.controller.hybrid_controller.HybridController import HybridController
+from solo_pybullet.controller.hybrid_controller.RobotMode import RobotMode
 from solo_pybullet.controller.initializer_controller.InitializerController import InitializerController
-from solo_pybullet.interface.FootHolder import FootHolder
+from solo_pybullet.controller.hybrid_controller.FootHolder import FootHolder
 from solo_pybullet.interface.Gamepad import gamepad_thread
-from solo_pybullet.interface.GamePadToRobot import wait_awakening_input, staticInput, walkInput
+from solo_pybullet.interface.Gamepad2Controller import wait_awakening_input, get_static_input, get_walk_input, \
+    get_new_mode
 from solo_pybullet.model.foot_trajectory.CycloidFootTrajectory import CycloidFootTrajectory
 from solo_pybullet.model.robot.BulletWrapper import BulletWrapper
 from solo_pybullet.simulation.initialization_simulation import configure_simulation
-from solo_pybullet.controller.parallel_controller.ParallelController import ParallelController
-
-
-class RobotMode(Enum):
-    SAFETY_MODE = 0
-    STATIC_MODE = 1
-    WALK_MODE = 2
 
 
 def main():
@@ -68,11 +60,10 @@ def main():
     #################################
     #            REMOTE             #
     #################################
+    # variables for gamepad control
     threading.Thread(target=gamepad_thread, args=()).start()
-
-    previousValuesStatic = np.zeros((6,))
-    previousValuesStatic[2] = 0.16
-    previousValuesWalk = np.zeros((3,))
+    previous_values_static = np.zeros((6,))
+    previous_values_static[2] = 0.16
 
     for i in range(int(sim_duration / dt)):
         #################################
@@ -99,16 +90,63 @@ def main():
         elif state == 2:
             flag, Q, dQ = InitializerController.idle_configuration(k, dt * i - idle_start_time, idle_mode_duration, constraints)
             if flag:
-                state = 2999
+                mode = RobotMode(1)
+                state = 3
 
-        elif state == 99:
-            valuesStatic = staticInput(previousValuesStatic)
+        # check control mode
+        if state == 3:
+            new_mode = get_new_mode(mode)
+            # if a new mode is wanted
+            if new_mode != mode:
+                mode = new_mode
+                state = 4
+            else:
+                state = 5
 
-            Q = ParallelController.controller(k, *valuesStatic, constraints)
-            previousValuesStatic = valuesStatic.copy()
+        # init robot fot the next mode
+        if state == 4:
+            if mode == RobotMode.SAFETY_MODE:
+                state = 41
+            elif mode == RobotMode.STATIC_MODE:
+                state = 42
+            elif mode == RobotMode.WALK_MODE:
+                state = 43
 
-        elif state == 2999:
-            valuesWalk = walkInput(1)
+        # init robot to SAFETY_MODE
+        if state == 41:
+            state = 3
+
+        # init robot to STATIC_MODE
+        elif state == 42:
+            state = 3
+
+        # init robot to WALK_MODE
+        elif state == 43:
+            state = 3
+
+        # execute the desired mode
+        if state == 5:
+            if mode == RobotMode.SAFETY_MODE:
+                state = 51
+            elif mode == RobotMode.STATIC_MODE:
+                state = 52
+            elif mode == RobotMode.WALK_MODE:
+                state = 53
+
+        # execute the mode SAFETY_MODE
+        if state == 51:
+            state = 3
+
+        # execute the mode STATIC_MODE
+        elif state == 52:
+            valuesStatic = get_static_input(previous_values_static)
+            Q, dQ = HybridController.controller(k, *valuesStatic, np.array([-L[1] - L[2] - L[3] - L[5], -L[0], 0] * 4), np.zeros((12,)), constraints)
+            previous_values_static = valuesStatic.copy()
+            state = 3
+
+        # execute the mode WALK_MODE
+        elif state == 53:
+            valuesWalk = get_walk_input(1)
             fh = FootHolder(k, np.array([-L[1] - L[2] - L[3] - L[5], -L[0]]), max_step_length, T)
             Pi, Pf = fh.get_feet_pos(*valuesWalk, H)
             P = np.zeros((12,))
@@ -123,61 +161,7 @@ def main():
             dP[6:9] = CycloidFootTrajectory.df(dt * i + T / 2, T, Pi, Pf, dir=False)
             dP[9:12] = CycloidFootTrajectory.df(dt * i, T, Pi, Pf, dir=False)
 
-            Q, dQ = HybridController.controller(k, *previousValuesStatic, P, dP, constraints)
-
-        # check control mode
-        elif state == 3:
-            # TODO : update control mode from remote input
-            new_mode = RobotMode(0)
-
-            # if a new mode is wanted
-            if new_mode != mode:
-                mode = new_mode
-                state = 4
-
-            else:
-                state = 5
-
-        # init robot fot the next mode
-        elif state == 4:
-            if mode == RobotMode.SAFETY_MODE:
-                state = 41
-            elif mode == RobotMode.STATIC_MODE:
-                state = 42
-            elif mode == RobotMode.WALK_MODE:
-                state = 43
-
-        # init robot to SAFETY_MODE
-        elif state == 41:
-            state = 3
-
-        # init robot to STATIC_MODE
-        elif state == 42:
-            state = 3
-
-        # init robot to WALK_MODE
-        elif state == 43:
-            state = 3
-
-        # execute the desired mode
-        elif state == 5:
-            if mode == RobotMode.SAFETY_MODE:
-                state = 51
-            elif mode == RobotMode.STATIC_MODE:
-                state = 52
-            elif mode == RobotMode.WALK_MODE:
-                state = 53
-
-        # execute the mode SAFETY_MODE
-        elif state == 51:
-            state = 3
-
-        # execute the mode STATIC_MODE
-        elif state == 52:
-            state = 3
-
-        # execute the mode WALK_MODE
-        elif state == 53:
+            Q, dQ = HybridController.controller(k, *previous_values_static, P, dP, constraints)
             state = 3
 
         #################################

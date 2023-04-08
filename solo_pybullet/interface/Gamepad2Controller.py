@@ -1,4 +1,6 @@
 import numpy as np
+
+from solo_pybullet.controller.hybrid_controller.RobotMode import RobotMode
 from solo_pybullet.interface.Gamepad import inputs, mutex
 
 # TODO static class
@@ -13,10 +15,26 @@ def wait_awakening_input():
     return ret
 
 
-def staticInput(previousValues, scale=np.array([16, 10, 100, 2, 2, 1.5]),
-                rawValuesWeight=np.array([0.8, 0.8, 1, 0.8, 0.8, 0.8]),
-                previousValuesWeight=np.array([0.2, 0.2, 0, 0.2, 0.2, 0.2]),
-                diviserFactor=np.array([2, 2, 1, 2, 2, 2])):
+def get_new_mode(current_mode):
+    next_mode = current_mode
+    with mutex:
+        if inputs['Start'] > 0:
+            inputs['Start'] = 0
+            inputs['Select'] = 0
+            next_mode = RobotMode(0)
+        elif inputs['Select'] > 0:
+            inputs['Select'] = 0
+            if current_mode.value == 1:
+                next_mode = RobotMode(2)
+            else:
+                next_mode = RobotMode(1)
+    return next_mode
+
+
+def get_static_input(previousValues, scale=np.array([16, 10, 100, 2, 2, 1.5]),
+                     rawValuesWeight=np.array([0.8, 0.8, 1, 0.8, 0.8, 0.8]),
+                     previousValuesWeight=np.array([0.2, 0.2, 0, 0.2, 0.2, 0.2]),
+                     diviserFactor=np.array([2, 2, 1, 2, 2, 2])):
     # TODO : clamp Tz value (copyInputs['Hat_V'])
     with mutex:
         copyInputs = inputs.copy()
@@ -35,7 +53,7 @@ def staticInput(previousValues, scale=np.array([16, 10, 100, 2, 2, 1.5]),
     return (rawValues * rawValuesWeight + previousValues * previousValuesWeight) / diviserFactor
 
 
-def walkInput(Vmax):
+def get_walk_input(Vmax):
     with mutex:
         copyInputs = inputs.copy()
 
@@ -43,7 +61,3 @@ def walkInput(Vmax):
     Vy = -Vmax * copyInputs['LeftJoy_H']
     omega = 0
     return np.array([Vx, Vy, omega])
-
-
-if __name__ == '__main__':
-    pass
