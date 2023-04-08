@@ -32,7 +32,6 @@ def key_received(key):
     :return:
     """
     with mutex:
-        print(key)
         if key.keyname == 'Axis 0' or key.keyname == '-Axis 0':
             inputs['LeftJoy_V'] = -key.value
         elif key.keyname == 'Axis 1' or key.keyname == '-Axis 1':
@@ -47,7 +46,7 @@ def key_received(key):
             inputs['RightJoy_V'] = key.value
         elif key.keyname == 'Hat 0 [Up]' and key.value == 1:
             inputs['Hat_V'] += 1
-        elif key.keyname == 'Hat 0 [Down]' and key.value == 1:
+        elif key.keyname == 'Hat 0 [Down]' and key.value == 4:
             inputs['Hat_V'] -= 1
         elif key.keyname == 'Button 7' and key.value == 1:
             inputs['Start'] += 1

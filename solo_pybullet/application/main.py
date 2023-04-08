@@ -2,6 +2,8 @@
 #  LOADING MODULES ##
 #####################
 import threading
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pybullet as p
 import time
@@ -27,8 +29,9 @@ def main():
     safe_mode_duration = 1  # wanted time to move from pybullet init config to safe position (lying on the ground)
     idle_mode_duration = 1  # wanted time to move from safe position to idle position
     T = 0.5  # time period of one foot cycle during walk mode
-    max_step_length = 0.2  # max step length doable by the robot
-    H = 0.05  # height of the step
+    max_step_length = 0.10  # max step length doable by the robot
+    H = 0.015  # height of the step
+    Vmax = 0.25  # max speed reachable by the base of the robot
 
     # simulation parameters
     dt = 0.01  # define the time step in second
@@ -39,7 +42,7 @@ def main():
     #       INITIALIZATION          #
     #################################
     # init simulation
-    robot_id, rev_joint_idx = configure_simulation(dt, False)
+    robot_id, rev_joint_idx = configure_simulation(dt, True)
 
     # init robot model
     k = BulletWrapper(L)
@@ -146,20 +149,20 @@ def main():
 
         # execute the mode WALK_MODE
         elif state == 53:
-            valuesWalk = get_walk_input(1)
+            valuesWalk = get_walk_input(Vmax)
             fh = FootHolder(k, np.array([-L[1] - L[2] - L[3] - L[5], -L[0]]), max_step_length, T)
             Pi, Pf = fh.get_feet_pos(*valuesWalk, H)
             P = np.zeros((12,))
             dP = np.zeros((12,))
-            P[0:3] = CycloidFootTrajectory.f(dt * i + T / 2, T, Pi, Pf, dir=True)
-            P[3:6] = CycloidFootTrajectory.f(dt * i, T, Pi, Pf, dir=True)
-            P[6:9] = CycloidFootTrajectory.f(dt * i + T / 2, T, Pi, Pf, dir=False)
-            P[9:12] = CycloidFootTrajectory.f(dt * i, T, Pi, Pf, dir=False)
+            P[0:3] = CycloidFootTrajectory.f(dt * i + T / 2, T, Pi[0:3], Pf[0:3], dir=True)
+            P[3:6] = CycloidFootTrajectory.f(dt * i, T, Pi[3:6], Pf[3:6], dir=True)
+            P[6:9] = CycloidFootTrajectory.f(dt * i + T / 2, T, Pi[6:9], Pf[6:9], dir=False)
+            P[9:12] = CycloidFootTrajectory.f(dt * i, T, Pi[9:12], Pf[9:12], dir=False)
 
-            dP[0:3] = CycloidFootTrajectory.df(dt * i + T / 2, T, Pi, Pf, dir=True)
-            dP[3:6] = CycloidFootTrajectory.df(dt * i, T, Pi, Pf, dir=True)
-            dP[6:9] = CycloidFootTrajectory.df(dt * i + T / 2, T, Pi, Pf, dir=False)
-            dP[9:12] = CycloidFootTrajectory.df(dt * i, T, Pi, Pf, dir=False)
+            dP[0:3] = CycloidFootTrajectory.df(dt * i + T / 2, T, Pi[0:3], Pf[0:3], dir=True)
+            dP[3:6] = CycloidFootTrajectory.df(dt * i, T, Pi[3:6], Pf[3:6], dir=True)
+            dP[6:9] = CycloidFootTrajectory.df(dt * i + T / 2, T, Pi[6:9], Pf[6:9], dir=False)
+            dP[9:12] = CycloidFootTrajectory.df(dt * i, T, Pi[9:12], Pf[9:12], dir=False)
 
             Q, dQ = HybridController.controller(k, *previous_values_static, P, dP, constraints)
             state = 3
@@ -179,6 +182,8 @@ def main():
         t_sleep = dt - (time.perf_counter() - t0)
         if t_sleep > 0:
             time.sleep(t_sleep * sim_speed)  # to slow down by sim_speed the simulation
+            # basePos, baseOrn = p.getBasePositionAndOrientation(robot_id)  # Get model position
+            # p.resetDebugVisualizerCamera(cameraDistance=1, cameraYaw=75, cameraPitch=-20, cameraTargetPosition=basePos)
 
     # quit pybullet
     p.disconnect()

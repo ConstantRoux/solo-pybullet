@@ -1,4 +1,6 @@
+import numpy
 import numpy as np
+from matplotlib import pyplot as plt
 
 
 class FootHolder:
@@ -22,8 +24,33 @@ class FootHolder:
             L = self.max_step_length
 
         # compute the start and end foot position in right foot frame
-        Pi = np.array([self.C[0] + 0.5 * L * np.cos(theta + np.pi), self.C[1] + 0.5 * L * np.sin(theta + np.pi), 0, 1])
-        Pf = np.array([self.C[0] + 0.5 * L * np.cos(theta), self.C[1] + 0.5 * L * np.sin(theta), H, 1])
+        Pi_FL = np.array([-(self.C[0] + 0.5 * L * np.cos(theta + np.pi)), self.C[1] + 0.5 * L * np.sin(theta + np.pi), 0, 1])
+        Pf_FL = np.array([-(self.C[0] + 0.5 * L * np.cos(theta)), self.C[1] + 0.5 * L * np.sin(theta), H, 1])
+        Pi_FR = np.array([self.C[0] + 0.5 * L * np.cos(theta + np.pi), self.C[1] + 0.5 * L * np.sin(theta + np.pi), 0, 1])
+        Pf_FR = np.array([self.C[0] + 0.5 * L * np.cos(theta), self.C[1] + 0.5 * L * np.sin(theta), H, 1])
+        Pi_HL = np.array([-(self.C[0] + 0.5 * L * np.cos(theta + np.pi)), -(self.C[1] + 0.5 * L * np.sin(theta + np.pi)), 0, 1])
+        Pf_HL = np.array([-(self.C[0] + 0.5 * L * np.cos(theta)), -(self.C[1] + 0.5 * L * np.sin(theta)), H, 1])
+        Pi_HR = np.array([self.C[0] + 0.5 * L * np.cos(theta + np.pi), -(self.C[1] + 0.5 * L * np.sin(theta + np.pi)), 0, 1])
+        Pf_HR = np.array([self.C[0] + 0.5 * L * np.cos(theta), -(self.C[1] + 0.5 * L * np.sin(theta)), H, 1])
 
-        return Pi[0:3], Pf[0:3]
+        plt.scatter(*(Pi_FL[0:2]), c='b')
+        plt.scatter(*(Pf_FL[0:2]), c='r')
+        plt.scatter(*(Pi_FR[0:2]), c='b')
+        plt.scatter(*(Pf_FR[0:2]), c='r')
+        plt.scatter(*(Pi_HL[0:2]), c='b')
+        plt.scatter(*(Pf_HL[0:2]), c='r')
+        plt.scatter(*(Pi_HR[0:2]), c='b')
+        plt.scatter(*(Pf_HR[0:2]), c='r')
 
+        plt.show()
+
+        Pi_FL = Pi_FL @ self.k.kinematics.r['FL']
+        Pf_FL = Pf_FL @ self.k.kinematics.r['FL']
+        Pi_FR = Pi_FR @ self.k.kinematics.r['FR']
+        Pf_FR = Pf_FR @ self.k.kinematics.r['FR']
+        Pi_HL = Pi_HL @ self.k.kinematics.r['HL']
+        Pf_HL = Pf_HL @ self.k.kinematics.r['HL']
+        Pi_HR = Pi_HR @ self.k.kinematics.r['HR']
+        Pf_HR = Pf_HR @ self.k.kinematics.r['HR']
+
+        return np.vstack((Pi_FL[0, 0:3], Pi_FR[0, 0:3], Pi_HL[0, 0:3], Pi_HR[0, 0:3])).A1, np.vstack((Pf_FL[0, 0:3], Pf_FR[0, 0:3], Pf_HL[0, 0:3], Pf_HR[0, 0:3])).A1
