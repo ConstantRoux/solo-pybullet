@@ -1,6 +1,6 @@
 import threading
 import time
-from pyjoystick.sdl2 import Key, Joystick, run_event_loop
+from pyjoystick.sdl2 import run_event_loop
 
 mutex = threading.Lock()
 # H : Horizontal, V : Vertical
@@ -32,6 +32,7 @@ def key_received(key):
     :return:
     """
     with mutex:
+        print(key.keyname)
         if key.keyname == 'Axis 0' or key.keyname == '-Axis 0':
             inputs['LeftJoy_V'] = -key.value
         elif key.keyname == 'Axis 1' or key.keyname == '-Axis 1':
@@ -48,6 +49,8 @@ def key_received(key):
             inputs['Hat_V'] += 1
         elif key.keyname == 'Hat 0 [Down]':
             inputs['Hat_V'] -= 1
+        elif key.keyname == 'Button 7':
+            inputs['Start'] += 1
 
 
 def gamepad_thread():

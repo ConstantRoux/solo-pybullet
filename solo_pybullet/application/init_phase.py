@@ -5,18 +5,12 @@ import time
 import numpy as np
 import pybullet as p
 import matplotlib.pyplot as plt
-
-from solo_pybullet.controller.optimization_controller.OptimizationController import OptimizationController
-from solo_pybullet.controller.parallel_controller.ParallelController import ParallelController
-from solo_pybullet.controller.parallel_controller.Parameters import Parameters
-from solo_pybullet.controller.initialization_controller.robot_initialization import idle_configuration, safe_configuration
+from solo_pybullet.controller.initializer_controller.InitializerController import InitializerController
 from solo_pybullet.simulation.initialization_simulation import configure_simulation
-from solo_pybullet.logger.Logger import Logger
-from solo_pybullet.model.foot_trajectory.CycloidFootTrajectory import CycloidFootTrajectory
-from solo_pybullet.model.foot_trajectory.BezierFootTrajectory import BezierFootTrajectory
 from solo_pybullet.model.robot.BulletWrapper import BulletWrapper
 
-def test3():
+
+def test():
     """
     Test initialization function
     :return:
@@ -51,7 +45,7 @@ def test3():
         t0 = time.perf_counter()
 
         if not safe_mode_flag:
-            safe_mode_flag, q = safe_configuration(k, i * dt, safe_mode_period, constraints)
+            safe_mode_flag, q, dq = InitializerController.safe_configuration(k, i * dt, safe_mode_period, constraints)
             targetposQ3.append(q[2])  # keep the value to plot them (q3)
 
         elif wait_input_flag:  # wait for input to go in idle configuration
@@ -61,11 +55,11 @@ def test3():
                 idle_time_start = dt * i
 
         elif not idle_mode_flag:
-            idle_mode_flag, q = idle_configuration(k, i * dt - idle_time_start, idle_mode_period, constraints, h=idle_height)
+            idle_mode_flag, q, dq = InitializerController.idle_configuration(k, i * dt - idle_time_start, idle_mode_period, constraints, h=idle_height)
             targetposQ3.append(q[2])  # keep the value to plot them (q3)
 
         p.setJointMotorControlArray(robot_id, rev_joint_idx, controlMode=p.POSITION_CONTROL,
-                                    targetPositions=q)
+                                    targetPositions=q, targetVelocities=dq)
 
         testQ3.append(p.getJointStates(robot_id, rev_joint_idx)[2][0])
 
@@ -86,4 +80,4 @@ def test3():
 
 
 if __name__ == '__main__':
-    test3()
+    test()

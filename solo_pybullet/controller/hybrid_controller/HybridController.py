@@ -9,20 +9,18 @@ class HybridController:
         """
         Process the inputs to move the robot in the disired configuration
         :param k: robot wrapper
-        :param tx: translation on x axis
-        :param ty: translation on y axis
-        :param tz: translation on z axis
-        :param rx: rotation on x axis
-        :param ry: rotation on y axis
-        :param rz: rotation on z axis
-        :param P: TODO
-        :param dP: TODO
+        :param tx: translation on x axis of the base
+        :param ty: translation on y axis of the base
+        :param tz: translation on z axis of the base
+        :param rx: rotation on x axis of the base
+        :param ry: rotation on y axis of the base
+        :param rz: rotation on z axis of the base
+        :param P: local positions of each foot
+        :param dP: local velocities of each foot
         :param constraints: constrain the robot joints
         :return: desired configuration
         """
         # set T01 (foot to shoulder) using inputs
-        R = Rot(rx, ry, rz)
-        Tr = np.array([tx, ty, tz])
-        T01 = Th(R, Tr)
+        T01 = Th(Rot(rx, ry, rz), np.array([tx, ty, tz]))
 
         return k.body_inverse_kinematics(T01, P, dP, constraints)

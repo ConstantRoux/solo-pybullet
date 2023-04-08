@@ -8,12 +8,16 @@ import numpy as np
 import pybullet as p
 import time
 
-from solo_pybullet.controller.initialization_controller.robot_initialization import safe_configuration, idle_configuration
-from solo_pybullet.interface.Gamepad import gamepad_thread, mutex, inputs
-from solo_pybullet.interface.GamePadToRobot import staticInput, walkInput
+from solo_pybullet.controller.hybrid_controller.HybridController import HybridController
+from solo_pybullet.controller.initializer_controller.InitializerController import InitializerController
+from solo_pybullet.interface.FootHolder import FootHolder
+from solo_pybullet.interface.Gamepad import gamepad_thread
+from solo_pybullet.interface.GamePadToRobot import wait_awakening_input, staticInput, walkInput
+from solo_pybullet.model.foot_trajectory.CycloidFootTrajectory import CycloidFootTrajectory
 from solo_pybullet.model.robot.BulletWrapper import BulletWrapper
 from solo_pybullet.simulation.initialization_simulation import configure_simulation
 from solo_pybullet.controller.parallel_controller.ParallelController import ParallelController
+
 
 class RobotMode(Enum):
     SAFETY_MODE = 0
@@ -30,6 +34,9 @@ def main():
     constraints = np.array([0, np.pi, -np.pi, np.pi, -np.pi, 0] * 4)  # constraints for each joint
     safe_mode_duration = 1  # wanted time to move from pybullet init config to safe position (lying on the ground)
     idle_mode_duration = 1  # wanted time to move from safe position to idle position
+    T = 0.5  # time period of one foot cycle during walk mode
+    max_step_length = 0.2  # max step length doable by the robot
+    H = 0.05  # height of the step
 
     # simulation parameters
     dt = 0.01  # define the time step in second
@@ -64,7 +71,8 @@ def main():
     threading.Thread(target=gamepad_thread, args=()).start()
 
     previousValuesStatic = np.zeros((6,))
-    previousValuesWalk = np.zeros((2,))
+    previousValuesStatic[2] = 0.16
+    previousValuesWalk = np.zeros((3,))
 
     for i in range(int(sim_duration / dt)):
         #################################
@@ -77,28 +85,45 @@ def main():
         #################################
         # init robot
         if state == 0:
-            flag, Q = safe_configuration(k, dt * i, safe_mode_duration, constraints)
+            flag, Q, dQ = InitializerController.safe_configuration(k, dt * i, safe_mode_duration, constraints)
             if flag:
                 state = 1
 
         # wait for awakening remote input
         elif state == 1:
-            # TODO : get awakening input from the remote
-            if True:
+            if wait_awakening_input():
                 idle_start_time = dt * i
                 state = 2
 
         # move robot to idle position
         elif state == 2:
-            flag, Q = idle_configuration(k, dt * i - idle_start_time, idle_mode_duration, constraints)
+            flag, Q, dQ = InitializerController.idle_configuration(k, dt * i - idle_start_time, idle_mode_duration, constraints)
             if flag:
-                state = 99
+                state = 2999
 
         elif state == 99:
             valuesStatic = staticInput(previousValuesStatic)
 
             Q = ParallelController.controller(k, *valuesStatic, constraints)
             previousValuesStatic = valuesStatic.copy()
+
+        elif state == 2999:
+            valuesWalk = walkInput(1)
+            fh = FootHolder(k, np.array([-L[1] - L[2] - L[3] - L[5], -L[0]]), max_step_length, T)
+            Pi, Pf = fh.get_feet_pos(*valuesWalk, H)
+            P = np.zeros((12,))
+            dP = np.zeros((12,))
+            P[0:3] = CycloidFootTrajectory.f(dt * i + T / 2, T, Pi, Pf, dir=True)
+            P[3:6] = CycloidFootTrajectory.f(dt * i, T, Pi, Pf, dir=True)
+            P[6:9] = CycloidFootTrajectory.f(dt * i + T / 2, T, Pi, Pf, dir=False)
+            P[9:12] = CycloidFootTrajectory.f(dt * i, T, Pi, Pf, dir=False)
+
+            dP[0:3] = CycloidFootTrajectory.df(dt * i + T / 2, T, Pi, Pf, dir=True)
+            dP[3:6] = CycloidFootTrajectory.df(dt * i, T, Pi, Pf, dir=True)
+            dP[6:9] = CycloidFootTrajectory.df(dt * i + T / 2, T, Pi, Pf, dir=False)
+            dP[9:12] = CycloidFootTrajectory.df(dt * i, T, Pi, Pf, dir=False)
+
+            Q, dQ = HybridController.controller(k, *previousValuesStatic, P, dP, constraints)
 
         # check control mode
         elif state == 3:
@@ -149,13 +174,10 @@ def main():
 
         # execute the mode STATIC_MODE
         elif state == 52:
-            walkInputs = walkinput()
-            # Q = walkingMode(walkingInputs['V'], walkingInputs['Omega'])
             state = 3
 
         # execute the mode WALK_MODE
         elif state == 53:
-
             state = 3
 
         #################################

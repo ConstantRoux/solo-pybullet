@@ -1,6 +1,17 @@
 import numpy as np
 from solo_pybullet.interface.Gamepad import inputs, mutex
 
+# TODO static class
+
+
+def wait_awakening_input():
+    ret = False
+    with mutex:
+        if inputs['Start'] > 0:
+            inputs['Start'] = 0
+            ret = True
+    return ret
+
 
 def staticInput(previousValues, scale=np.array([16, 10, 100, 2, 2, 1.5]),
                 rawValuesWeight=np.array([0.8, 0.8, 1, 0.8, 0.8, 0.8]),
@@ -20,16 +31,18 @@ def staticInput(previousValues, scale=np.array([16, 10, 100, 2, 2, 1.5]),
     Rz = copyInputs['Trigger'] / scale[5]
 
     rawValues = np.array([Tx, Ty, Tz, Rx, Ry, Rz])
-
+    # TODO use np.average with weight
     return (rawValues * rawValuesWeight + previousValues * previousValuesWeight) / diviserFactor
 
 
-def walkInput():
-    walkingInput = {'V': 0, 'Omega': 0}
+def walkInput(Vmax):
     with mutex:
         copyInputs = inputs.copy()
 
-    return copyInputs
+    Vx = -Vmax * copyInputs['LeftJoy_V']
+    Vy = -Vmax * copyInputs['LeftJoy_H']
+    omega = 0
+    return np.array([Vx, Vy, omega])
 
 
 if __name__ == '__main__':

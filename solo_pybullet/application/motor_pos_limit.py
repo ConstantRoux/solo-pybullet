@@ -4,19 +4,11 @@
 import time
 import numpy as np
 import pybullet as p
-import matplotlib.pyplot as plt
-
-from solo_pybullet.controller.optimization_controller.OptimizationController import OptimizationController
-from solo_pybullet.controller.parallel_controller.ParallelController import ParallelController
-from solo_pybullet.controller.parallel_controller.Parameters import Parameters
-from solo_pybullet.controller.initialization_controller.robot_initialization import idle_configuration, safe_configuration
 from solo_pybullet.simulation.initialization_simulation import configure_simulation
-from solo_pybullet.logger.Logger import Logger
-from solo_pybullet.model.foot_trajectory.CycloidFootTrajectory import CycloidFootTrajectory
-from solo_pybullet.model.foot_trajectory.BezierFootTrajectory import BezierFootTrajectory
 from solo_pybullet.model.robot.BulletWrapper import BulletWrapper
 
-def test4():
+
+def test():
     """
     Test q3 movement limit
     :return:
@@ -56,5 +48,6 @@ def test4():
     # quit pybullet
     p.disconnect()
 
+
 if __name__ == '__main__':
-    test4()
+    test()
