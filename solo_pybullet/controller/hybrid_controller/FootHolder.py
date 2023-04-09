@@ -1,6 +1,4 @@
-import numpy
 import numpy as np
-from matplotlib import pyplot as plt
 
 
 class FootHolder:
@@ -18,7 +16,7 @@ class FootHolder:
         theta = np.arctan2(Vy, Vx)
 
         # compute the step length to reach the desired speed
-        L = self.T * V
+        L = 0.5 * self.T * V
 
         if L > self.max_step_length:
             L = self.max_step_length

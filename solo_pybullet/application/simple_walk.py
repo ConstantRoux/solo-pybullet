@@ -37,6 +37,8 @@ def test():
 
     Pc = np.array([[0, 0], [2.5, 2.5], [5, 5]])
     controller = OptimizationController(k, T, dt, H, 0.2, z0, Pc)
+
+    ####################
     #      LOGGER     ##
     ####################
     log = True

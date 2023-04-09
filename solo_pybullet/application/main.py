@@ -6,6 +6,7 @@ import numpy as np
 import pybullet as p
 import time
 from solo_pybullet.controller.hybrid_controller.HybridController import HybridController
+from solo_pybullet.controller.hybrid_controller.LoggerThread import logger_thread, expected_speed_x, expected_speed_y, reached_speed_x, reached_speed_y
 from solo_pybullet.controller.hybrid_controller.RobotMode import RobotMode
 from solo_pybullet.controller.initializer_controller.InitializerController import InitializerController
 from solo_pybullet.controller.hybrid_controller.FootHolder import FootHolder
@@ -26,10 +27,10 @@ def main():
     constraints = np.array([0, np.pi, -np.pi, np.pi, -np.pi, 0] * 4)  # constraints for each joint
     safe_mode_duration = 1  # wanted time to move from pybullet init config to safe position (lying on the ground)
     idle_mode_duration = 1  # wanted time to move from safe position to idle position
-    T = 0.35  # time period of one foot cycle during walk mode
-    max_step_length = 0.2  # max step length doable by the robot
-    H = 0.025  # height of the step
-    Vmax = 0.3  # max speed reachable by the base of the robot
+    T = 0.3  # time period of one foot cycle during walk mode
+    max_step_length = 0.3  # max step length doable by the robot
+    H = 0.015  # height of the step
+    Vmax = 0.5  # max speed reachable by the base of the robot
 
     # simulation parameters
     dt = 0.01  # define the time step in second
@@ -65,6 +66,13 @@ def main():
     threading.Thread(target=gamepad_thread, args=()).start()
     previous_values_static = np.zeros((6,))
     previous_values_static[2] = 0.16
+
+    #################################
+    #           DEBUGGER            #
+    #################################
+    debug = True
+    if debug:
+        threading.Thread(target=logger_thread, args=(dt, Vmax)).start()
 
     for i in range(int(sim_duration / dt)):
         #################################
@@ -147,9 +155,17 @@ def main():
 
         # execute the mode WALK_MODE
         elif state == 53:
-            valuesWalk = get_walk_input(Vmax)
+            values_walk = get_walk_input(Vmax)
+
+            if debug:
+                expected_speed_x.append(-values_walk[0])
+                expected_speed_y.append(values_walk[1])
+                lv, _ = p.getBaseVelocity(robot_id)
+                reached_speed_x.append(lv[0])
+                reached_speed_y.append(lv[1])
+
             fh = FootHolder(k, np.array([-L[1] - L[2] - L[3] - L[5], -L[0]]), max_step_length, T)
-            Pi, Pf = fh.get_feet_pos(*valuesWalk, H)
+            Pi, Pf = fh.get_feet_pos(*values_walk, H)
             P = np.zeros((12,))
             dP = np.zeros((12,))
             P[0:3] = CycloidFootTrajectory.f(dt * i + T / 2, T, Pi[0:3], Pf[0:3], dir=True)
@@ -180,9 +196,15 @@ def main():
         t_sleep = dt - (time.perf_counter() - t0)
         if t_sleep > 0:
             time.sleep(t_sleep * sim_speed)  # to slow down by sim_speed the simulation
+
+            #################################
+            #          SIMULATION           #
+            #################################
+            # uncomment to have autofocus camera on the robot
             basePos, baseOrn = p.getBasePositionAndOrientation(robot_id)  # Get model position
             eulerBasOrn = p.getEulerFromQuaternion(baseOrn)
-            p.resetDebugVisualizerCamera(cameraDistance=1, cameraYaw=eulerBasOrn[2]*180/np.pi-90, cameraPitch=-20, cameraTargetPosition=basePos)
+            p.resetDebugVisualizerCamera(cameraDistance=1, cameraYaw=eulerBasOrn[2] * 180 / np.pi - 90, cameraPitch=-30,
+                                         cameraTargetPosition=basePos)
 
     # quit pybullet
     p.disconnect()
