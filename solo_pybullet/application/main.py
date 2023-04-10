@@ -35,7 +35,7 @@ def main():
     # simulation parameters
     dt = 0.01  # define the time step in second
     sim_speed = 1  # to slow down by sim_speed the simulation
-    sim_duration = 600  # duration of the simulation in seconds
+    sim_duration = 90  # duration of the simulation in seconds
 
     #################################
     #       INITIALIZATION          #
@@ -66,6 +66,7 @@ def main():
     threading.Thread(target=gamepad_thread, args=()).start()
     previous_values_static = np.zeros((6,))
     previous_values_static[2] = 0.16
+    values_walk = np.zeros((3,))
 
     #################################
     #           DEBUGGER            #
@@ -73,6 +74,14 @@ def main():
     debug = True
     if debug:
         threading.Thread(target=logger_thread, args=(dt, Vmax)).start()
+
+    #################################
+    #            LOGGER             #
+    #################################
+    logger = False
+    data_log = None
+    if logger:
+        data_log = np.zeros((int(sim_duration / dt), 1+2+24))
 
     for i in range(int(sim_duration / dt)):
         #################################
@@ -182,6 +191,12 @@ def main():
             state = 3
 
         #################################
+        #            LOGGER             #
+        #################################
+        if logger:
+            data_log[i, :] = np.concatenate((np.array([dt]), values_walk[0:2], Q, dQ))
+
+        #################################
         #        PD-CONTROL LOOP        #
         #################################
         p.setJointMotorControlArray(robot_id, rev_joint_idx, controlMode=p.POSITION_CONTROL,
@@ -208,6 +223,12 @@ def main():
 
     # quit pybullet
     p.disconnect()
+
+    #################################
+    #            LOGGER             #
+    #################################
+    if logger:
+        np.savetxt("data" + str(dt) + ".csv", data_log, delimiter=",")
 
 
 if __name__ == '__main__':

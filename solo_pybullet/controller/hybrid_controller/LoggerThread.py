@@ -15,11 +15,12 @@ def logger_thread(dt, Vmax):
 
     while True:
         ax[0].clear()
-        ax[0].plot(expected_speed_x[len(expected_speed_x) - stp:], c='red')
-        ax[0].plot(reached_speed_y[len(reached_speed_x) - stp:], c='blue')
+        dp = len(expected_speed_x) - stp if len(expected_speed_x) - stp >= 0 else 0
+        ax[0].plot(expected_speed_x[dp:], c='red')
+        ax[0].plot(reached_speed_y[dp:], c='blue')
         ax[1].clear()
-        ax[1].plot(expected_speed_y[len(expected_speed_y) - stp:], c='red')
-        ax[1].plot(reached_speed_x[len(reached_speed_y) - stp:], c='blue')
+        ax[1].plot(expected_speed_y[dp:], c='red')
+        ax[1].plot(reached_speed_x[dp:], c='blue')
 
         ax[0].set_ylim([-Vmax * 1.5, Vmax * 1.5])
         ax[0].set_xlabel('Time [k.dt]')

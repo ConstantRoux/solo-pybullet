@@ -1,4 +1,3 @@
-import numpy as np
 import pybullet_data
 import pybullet as p
 
@@ -10,6 +9,12 @@ def configure_simulation(dt, fixedBase=False):
 
     # start pybullet client
     client = p.connect(p.GUI)
+    # client = p.connect(p.GUI, options="--mp4=\"demo6.mp4\" --mp4fps=100")
+    # p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)
+    # p.configureDebugVisualizer(p.COV_ENABLE_SEGMENTATION_MARK_PREVIEW, 0)
+    # p.configureDebugVisualizer(p.COV_ENABLE_DEPTH_BUFFER_PREVIEW, 0)
+    # p.configureDebugVisualizer(p.COV_ENABLE_RGB_BUFFER_PREVIEW, 0)
+    # p.configureDebugVisualizer(p.COV_ENABLE_SINGLE_STEP_RENDERING, 1)
 
     # setup pybullet environment
     p.setGravity(0, 0, -9.81)
